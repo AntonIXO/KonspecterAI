@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ai-reader</string>
+    <string name="title_activity_main">ai-reader</string>
+    <string name="package_name">dev.aireader.aireader</string>
+    <string name="custom_url_scheme">dev.aireader.aireader</string>
+</resources>
