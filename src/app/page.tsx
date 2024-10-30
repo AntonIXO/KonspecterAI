@@ -1,8 +1,4 @@
 "use client"
-
-import Image from "next/image";
-import { useState } from "react";
-import { ReactReader } from "react-reader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
@@ -27,8 +23,8 @@ export default function Home() {
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
         <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
           <li className="mb-2">
-            Get started by uploading your book.
-          </li>
+            Get started by uploadin your book.
+          </li>g
           <li>Highlight text to use AI.</li>
         </ol>
         <div className="w-full max-w-md flex flex-col gap-4">
