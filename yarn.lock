@@ -890,6 +890,11 @@
   resolved "https://registry.yarnpkg.com/@ungap/structured-clone/-/structured-clone-1.2.0.tgz#756641adb587851b5ccb3e095daf27ae581c8406"
   integrity sha512-zuVdFrMJiuCDQUMCzQaD6KL28MjnqqN8XnAqiEq9PNm/hCPTSGfrXCOfwj1ow4LFb/tNymJPwsNbVePc1xFqrQ==
 
+"@wojtekmaj/react-hooks@^1.21.0":
+  version "1.21.0"
+  resolved "https://registry.yarnpkg.com/@wojtekmaj/react-hooks/-/react-hooks-1.21.0.tgz#a4ad993cbe272773a60b81d7d8f504a3c9b55fc3"
+  integrity sha512-lxZgdVbnFROsaNa3y6nqYFwoajnC5kN41+UdbnTyRyc1O7l30/nH4kgslPQjTPBYxBq+PRT4lYg3fFYVdipD2Q==
+
 "@xmldom/xmldom@^0.7.5":
   version "0.7.13"
   resolved "https://registry.yarnpkg.com/@xmldom/xmldom/-/xmldom-0.7.13.tgz#ff34942667a4e19a9f4a0996a76814daac364cf3"
