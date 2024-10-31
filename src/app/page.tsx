@@ -15,7 +15,11 @@ export default function Home() {
   };
 
   const handleLoad = () => {
-    router.push("/reader");
+    if (file?.type === "application/epub+zip") {
+      router.push("/reader/epub");
+    } else if (file?.type === "application/pdf") {
+      router.push("/reader/pdf");
+    }
   };
 
   return (
@@ -23,8 +27,8 @@ export default function Home() {
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
         <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
           <li className="mb-2">
-            Get started by uploadin your book.
-          </li>g
+            Get started by uploading your book.
+          </li>
           <li>Highlight text to use AI.</li>
         </ol>
         <div className="w-full max-w-md flex flex-col gap-4">

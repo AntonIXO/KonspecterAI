@@ -26,6 +26,7 @@ export default function Reader() {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [location, setLocation] = useState<string | number>(0);
   const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(null);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const onResize = useCallback<ResizeObserverCallback>((entries) => {
     const [entry] = entries;
@@ -51,6 +52,14 @@ export default function Reader() {
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
+  };
+
+  const goToNextPage = () => {
+    setCurrentPage((prev) => (prev < (numPages || 1) ? prev + 1 : prev));
+  };
+
+  const goToPrevPage = () => {
+    setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
   };
 
   if (!file) {
@@ -83,17 +92,49 @@ export default function Reader() {
                   onLoadSuccess={onDocumentLoadSuccess}
                   className="max-w-full"
                 >
-                  {Array.from(new Array(numPages), (el, index) => (
-                    <Page
-                      key={`page_${index + 1}`}
-                      pageNumber={index + 1}
-                      width={containerWidth ? Math.min(containerWidth - 48, maxWidth) : maxWidth}
-                      className="mb-4"
-                      renderTextLayer={true}
-                      renderAnnotationLayer={true}
-                    />
-                  ))}
+                  <Page
+                    pageNumber={currentPage}
+                    width={containerWidth ? Math.min(containerWidth - 48, maxWidth) : maxWidth}
+                    className="mb-4"
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                  />
                 </Document>
+
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex items-center justify-center gap-4">
+                  <Button
+                    onClick={goToPrevPage}
+                    disabled={currentPage <= 1}
+                    variant="outline"
+                  >
+                    Previous
+                  </Button>
+                  
+                  <div className="flex items-center gap-2">
+                    <span>Page {currentPage} of {numPages}</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={numPages || 1}
+                      value={currentPage}
+                      onChange={(e) => {
+                        const value = parseInt(e.target.value);
+                        if (value >= 1 && value <= (numPages || 1)) {
+                          setCurrentPage(value);
+                        }
+                      }}
+                      className="w-16 px-2 py-1 border rounded"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={goToNextPage}
+                    disabled={currentPage >= (numPages || 1)}
+                    variant="outline"
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
