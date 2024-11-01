@@ -12,6 +12,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useResizeObserver } from "@wojtekmaj/react-hooks";
 import { TextSelection } from "@/components/TextSelection";
 
+import { createOllama } from "ollama-ai-provider";
+import { generateText } from "ai";
+import { Summary } from "@/components/Summary";
+
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
@@ -29,6 +33,8 @@ export default function PDFReader() {
   const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [inputValue, setInputValue] = useState<string>(String(currentPage));
+  const [summary, setSummary] = useState<string>("");
+  const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
 
   const onResize = useCallback<ResizeObserverCallback>((entries) => {
     const [entry] = entries;
@@ -51,6 +57,8 @@ export default function PDFReader() {
     reader.readAsArrayBuffer(file);
   }, [file, router]);
 
+  const ollama = createOllama();
+
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
   };
@@ -63,9 +71,15 @@ export default function PDFReader() {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
   };
 
-  const handleSummarize = async (text: string) => {
+  const handleSummarize = async (t: string) => {
     // Handle PDF text summarization
-    console.log("Summarizing PDF text:", text);
+    console.log("Summarizing PDF text:", t);
+    const resp = await generateText({
+      model: ollama("llama2"),
+      prompt: "Напиши о чем этот текст на русском языке. Не пиши ничего лишнего: " + t,
+    });
+    setSummary(resp.text);
+    setSummaryOpen(true);
   };
 
   useEffect(() => {
@@ -88,6 +102,7 @@ export default function PDFReader() {
   return (
     <div className="relative min-h-screen">
       <TextSelection onSummarize={handleSummarize} />
+      <Summary text={summary} open={summaryOpen} setOpen={setSummaryOpen} />
       <div className="min-h-screen p-8 flex flex-col items-center">
         <div className="w-full max-w-6xl">
           <Button onClick={() => router.push("/")} className="mb-4">
