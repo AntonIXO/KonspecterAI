@@ -63,20 +63,20 @@ export default function PDFReader() {
     setNumPages(numPages);
   };
 
-  const goToNextPage = () => {
+  const goToNextPage = useCallback(() => {
     setCurrentPage((prev) => (prev < (numPages || 1) ? prev + 1 : prev));
-  };
+  }, [numPages]);
 
-  const goToPrevPage = () => {
+  const goToPrevPage = useCallback(() => {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
-  };
+  }, []);
 
   const handleSummarize = async (t: string) => {
     // Handle PDF text summarization
     console.log("Summarizing PDF text:", t);
     const resp = await generateText({
-      model: ollama("llama2"),
-      prompt: "Напиши о чем этот текст на русском языке. Не пиши ничего лишнего: " + t,
+      model: ollama("lakomoor/vikhr-llama-3.2-1b-instruct:1b"),
+      prompt: "Напиши о чем этот текст на русском языке: " + t,
     });
     setSummary(resp.text);
     setSummaryOpen(true);
@@ -93,7 +93,7 @@ export default function PDFReader() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [numPages]);
+  }, [goToNextPage, goToPrevPage, numPages]);
 
   if (!file) {
     return null;

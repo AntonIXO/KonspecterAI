@@ -5,7 +5,6 @@ import { useEffect, useState } from "react";
 import { ReactReader } from "react-reader";
 import { Button } from "@/components/ui/button";
 import { useFile } from "@/lib/FileContext";
-import { Card, CardContent } from "@/components/ui/card";
 
 export default function EpubReader() {
   const router = useRouter();
