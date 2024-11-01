@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { useFile } from "@/lib/FileContext";
@@ -47,11 +47,6 @@ export default function PDFReader() {
       router.push("/");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setFileBuffer(e.target?.result as ArrayBuffer);
-    };
-    reader.readAsArrayBuffer(file);
   }, [file, router]);
 
   const ollama = createOllama();
