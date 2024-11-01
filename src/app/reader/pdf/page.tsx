@@ -1,15 +1,13 @@
 "use client"
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useCallback } from "react";
-import { ReactReader } from "react-reader";
+import { useEffect, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { useFile } from "@/lib/FileContext";
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import { Card, CardContent } from "@/components/ui/card";
-import { useResizeObserver } from "@wojtekmaj/react-hooks";
 import { TextSelection } from "@/components/TextSelection";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
@@ -17,39 +15,33 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString();
 
-const maxWidth = 800;
+const maxWidth = 1100;
 
 export default function PDFReader() {
   const router = useRouter();
   const { file } = useFile();
-  const [containerRef, setContainerRef] = useState<HTMLElement | null>(null);
-  const [containerWidth, setContainerWidth] = useState<number>();
+  // const [containerRef, setContainerRef] = useState<HTMLElement | null>(null);
+  // const [containerWidth, setContainerWidth] = useState<number>();
   const [numPages, setNumPages] = useState<number | null>(null);
-  const [location, setLocation] = useState<string | number>(0);
-  const [fileBuffer, setFileBuffer] = useState<ArrayBuffer | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [inputValue, setInputValue] = useState<string>(String(currentPage));
 
-  const onResize = useCallback<ResizeObserverCallback>((entries) => {
-    const [entry] = entries;
-    if (entry) {
-      setContainerWidth(entry.contentRect.width);
-    }
-  }, []);
+  // const onResize = useCallback<ResizeObserverCallback>((entries) => {
+  //   const [entry] = entries;
+  //   if (entry) {
+  //     setContainerWidth(entry.contentRect.width);
+  //   }
+  // }, []);
 
-  useResizeObserver(containerRef, {}, onResize);
+  // This causes infinite re-renders
+  // useResizeObserver(containerRef, {}, onResize);
 
   useEffect(() => {
     if (!file) {
       router.push("/");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setFileBuffer(e.target?.result as ArrayBuffer);
-    };
-    reader.readAsArrayBuffer(file);
-  }, [file, router]);
+  }, [router, file]);
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
@@ -79,7 +71,7 @@ export default function PDFReader() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [numPages]);
+  }, [numPages, goToNextPage, goToPrevPage]);
 
   if (!file) {
     return null;
@@ -95,18 +87,7 @@ export default function PDFReader() {
           </Button>
 
           <Card className="w-full overflow-hidden bg-white">
-            <CardContent className="p-6" ref={setContainerRef}>
-              {file.type === "application/epub+zip" && fileBuffer && (
-                <div className="w-full h-full mt-4">
-                  <ReactReader
-                    url={fileBuffer}
-                    location={location}
-                    locationChanged={(epubcfi: string) => setLocation(epubcfi)}
-                  />
-                </div>
-              )}
-
-              {file.type === "application/pdf" && (
+            <CardContent className="p-6">
                 <div className="w-full flex flex-col items-center">
                   <Document
                     file={file}
@@ -115,7 +96,7 @@ export default function PDFReader() {
                   >
                     <Page
                       pageNumber={currentPage}
-                      width={containerWidth ? Math.min(containerWidth - 48, maxWidth) : maxWidth}
+                      width={maxWidth}
                       className="mb-4"
                       renderTextLayer={true}
                       renderAnnotationLayer={true}
@@ -166,8 +147,7 @@ export default function PDFReader() {
                       Next
                     </Button>
                   </div>
-                </div>
-              )}
+              </div>
             </CardContent>
           </Card>
         </div>
