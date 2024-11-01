@@ -87,6 +87,11 @@ export default function PDFReader() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [goToNextPage, goToPrevPage, numPages]);
 
+  // Add this effect to update inputValue when currentPage changes
+  useEffect(() => {
+    setInputValue(String(currentPage));
+  }, [currentPage]);
+
   if (!file) {
     return null;
   }
@@ -147,7 +152,12 @@ export default function PDFReader() {
                           }
                         }}
                         onBlur={() => {
-                          setInputValue(String(currentPage));
+                          const newPage = parseInt(inputValue);
+                          if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
+                            setCurrentPage(newPage);
+                          } else {
+                            setInputValue(String(currentPage));
+                          }
                         }}
                         className="w-16 px-2 py-1 border rounded"
                       /> of {numPages}</span>
