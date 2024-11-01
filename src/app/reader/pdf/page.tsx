@@ -31,7 +31,7 @@ export default function PDFReader() {
   const [inputValue, setInputValue] = useState<string>(String(currentPage));
   const [summary, setSummary] = useState<string>("");
   const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
-
+  
   // const onResize = useCallback<ResizeObserverCallback>((entries) => {
   //   const [entry] = entries;
   //   if (entry) {
@@ -47,7 +47,12 @@ export default function PDFReader() {
       router.push("/");
       return;
     }
-  }, [router, file]);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setFileBuffer(e.target?.result as ArrayBuffer);
+    };
+    reader.readAsArrayBuffer(file);
+  }, [file, router]);
 
   const ollama = createOllama();
 
@@ -85,7 +90,7 @@ export default function PDFReader() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [numPages, goToNextPage, goToPrevPage]);
+  }, [goToNextPage, goToPrevPage, numPages]);
 
   if (!file) {
     return null;
