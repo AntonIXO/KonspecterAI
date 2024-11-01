@@ -15,7 +15,7 @@ export function Summary({ text, open, setOpen }: SummaryProps) {
                 <DrawerHeader>
                     <DrawerTitle>Summary</DrawerTitle>
                 </DrawerHeader>
-                <p>{text}</p>
+                <p className="p-4 text-sm text-gray-700">{text}</p>
                 <DrawerFooter>
             <Button>Save</Button>
             <DrawerClose asChild>

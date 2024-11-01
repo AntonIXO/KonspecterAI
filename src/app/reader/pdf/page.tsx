@@ -24,13 +24,15 @@ const maxWidth = 1100;
 export default function PDFReader() {
   const router = useRouter();
   const { file } = useFile();
-  // const [containerRef, setContainerRef] = useState<HTMLElement | null>(null);
-  // const [containerWidth, setContainerWidth] = useState<number>();
   const [numPages, setNumPages] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [inputValue, setInputValue] = useState<string>(String(currentPage));
   const [summary, setSummary] = useState<string>("");
   const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
+
+  // This causes infinite re-renders
+  // const [containerRef, setContainerRef] = useState<HTMLElement | null>(null);
+  // const [containerWidth, setContainerWidth] = useState<number>();
   
   // const onResize = useCallback<ResizeObserverCallback>((entries) => {
   //   const [entry] = entries;
@@ -38,8 +40,6 @@ export default function PDFReader() {
   //     setContainerWidth(entry.contentRect.width);
   //   }
   // }, []);
-
-  // This causes infinite re-renders
   // useResizeObserver(containerRef, {}, onResize);
 
   useEffect(() => {
@@ -65,10 +65,10 @@ export default function PDFReader() {
 
   const handleSummarize = async (t: string) => {
     // Handle PDF text summarization
-    console.log("Summarizing PDF text:", t);
+    console.log("Summarizing text:", t);
     const resp = await generateText({
-      model: ollama("lakomoor/vikhr-llama-3.2-1b-instruct:1b"),
-      prompt: "Напиши о чем этот текст на русском языке: " + t,
+      model: ollama("llama3.2:1b"),
+      prompt: "Summarize given text. Output summarize only. Follow original text language. Text: " + t,
     });
     setSummary(resp.text);
     setSummaryOpen(true);
