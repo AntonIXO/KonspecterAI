@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 
+
+
 interface TextSelectionProps {
   onSummarize: (text: string) => void;
 }
@@ -15,6 +17,7 @@ export function TextSelection({ onSummarize }: TextSelectionProps) {
     text: "",
     position: null,
   });
+
 
   useEffect(() => {
     const handleSelection = () => {
