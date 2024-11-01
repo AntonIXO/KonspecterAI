@@ -44,8 +44,10 @@ export default function PDFReader() {
 
   useEffect(() => {
     if (!file) {
-      router.push("/");
-      return;
+      const timeout = setTimeout(() => {
+        router.push("/");
+      }, 100);
+      return () => clearTimeout(timeout);
     }
   }, [file, router]);
 
@@ -92,6 +94,25 @@ export default function PDFReader() {
     setInputValue(String(currentPage));
   }, [currentPage]);
 
+  // Add wheel event handler
+  // const handleWheel = useCallback((e: WheelEvent) => {
+  //   if (e.deltaY > 0) {
+  //     goToNextPage();
+  //   } else if (e.deltaY < 0) {
+  //     goToPrevPage();
+  //   }
+  // }, [goToNextPage, goToPrevPage]);
+
+  // // Add wheel event listener
+  // useEffect(() => {
+  //   const documentElement = document.querySelector('.pdf-container');
+  //   if (documentElement) {
+  //     const wheelHandler = (e: Event) => handleWheel(e as WheelEvent);
+  //     documentElement.addEventListener('wheel', wheelHandler);
+  //     return () => documentElement.removeEventListener('wheel', wheelHandler);
+  //   }
+  // }, [handleWheel]);
+
   if (!file) {
     return null;
   }
@@ -112,7 +133,7 @@ export default function PDFReader() {
                   <Document
                     file={file}
                     onLoadSuccess={onDocumentLoadSuccess}
-                    className="max-w-full"
+                    className="max-w-full pdf-container"
                   >
                     <Page
                       pageNumber={currentPage}

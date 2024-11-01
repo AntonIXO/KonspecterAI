@@ -3,8 +3,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 
-
-
 interface TextSelectionProps {
   onSummarize: (text: string) => void;
 }
@@ -18,9 +16,8 @@ export function TextSelection({ onSummarize }: TextSelectionProps) {
     position: null,
   });
 
-
   useEffect(() => {
-    const handleSelection = () => {
+    const handleSelection = (event: MouseEvent) => {
       const selectedText = window.getSelection();
       
       if (!selectedText || selectedText.isCollapsed) {
@@ -34,25 +31,36 @@ export function TextSelection({ onSummarize }: TextSelectionProps) {
         return;
       }
 
-      const range = selectedText.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-
       setSelection({
         text,
         position: {
-          x: rect.left + (rect.width / 2),
-          y: rect.top - 10, // Position above the selection
+          x: event.clientX,
+          y: event.clientY
         },
       });
     };
 
-    document.addEventListener("selectionchange", handleSelection);
-    return () => document.removeEventListener("selectionchange", handleSelection);
+    document.addEventListener("mouseup", handleSelection);
+    return () => document.removeEventListener("mouseup", handleSelection);
   }, []);
 
   if (!selection.text || !selection.position) {
     return null;
   }
+
+  const handleClick = () => {
+    // Store the text before clearing selection
+    const text = selection.text;
+    
+    // Clear the selection
+    window.getSelection()?.removeAllRanges();
+    
+    // Reset our selection state
+    setSelection({ text: "", position: null });
+    
+    // Call the summarize callback with the stored text
+    onSummarize(text);
+  };
 
   return (
     <div
@@ -65,8 +73,8 @@ export function TextSelection({ onSummarize }: TextSelectionProps) {
     >
       <Button
         size="sm"
-        className="shadow-lg"
-        onClick={() => onSummarize(selection.text)}
+        className="shadow-lg after:absolute after:top-full after:left-1/2 after:-translate-x-2 after:h-0 after:w-0 after:border-x-[6px] after:border-x-transparent after:border-b-[8px] after:border-b-black after:rotate-180"
+        onClick={handleClick}
       >
         Summarize
       </Button>
