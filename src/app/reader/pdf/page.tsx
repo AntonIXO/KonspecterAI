@@ -10,6 +10,10 @@ import 'react-pdf/dist/esm/Page/TextLayer.css';
 import { Card, CardContent } from "@/components/ui/card";
 import { TextSelection } from "@/components/TextSelection";
 
+import { createOllama } from "ollama-ai-provider";
+import { generateText } from "ai";
+import { Summary } from "@/components/Summary";
+
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
@@ -25,6 +29,8 @@ export default function PDFReader() {
   const [numPages, setNumPages] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [inputValue, setInputValue] = useState<string>(String(currentPage));
+  const [summary, setSummary] = useState<string>("");
+  const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
 
   // const onResize = useCallback<ResizeObserverCallback>((entries) => {
   //   const [entry] = entries;
@@ -43,21 +49,29 @@ export default function PDFReader() {
     }
   }, [router, file]);
 
+  const ollama = createOllama();
+
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
   };
 
-  const goToNextPage = () => {
+  const goToNextPage = useCallback(() => {
     setCurrentPage((prev) => (prev < (numPages || 1) ? prev + 1 : prev));
-  };
+  }, [numPages]);
 
-  const goToPrevPage = () => {
+  const goToPrevPage = useCallback(() => {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
-  };
+  }, []);
 
-  const handleSummarize = async (text: string) => {
+  const handleSummarize = async (t: string) => {
     // Handle PDF text summarization
-    console.log("Summarizing PDF text:", text);
+    console.log("Summarizing PDF text:", t);
+    const resp = await generateText({
+      model: ollama("lakomoor/vikhr-llama-3.2-1b-instruct:1b"),
+      prompt: "Напиши о чем этот текст на русском языке: " + t,
+    });
+    setSummary(resp.text);
+    setSummaryOpen(true);
   };
 
   useEffect(() => {
@@ -80,6 +94,7 @@ export default function PDFReader() {
   return (
     <div className="relative min-h-screen">
       <TextSelection onSummarize={handleSummarize} />
+      <Summary text={summary} open={summaryOpen} setOpen={setSummaryOpen} />
       <div className="min-h-screen p-8 flex flex-col items-center">
         <div className="w-full max-w-6xl">
           <Button onClick={() => router.push("/")} className="mb-4">
