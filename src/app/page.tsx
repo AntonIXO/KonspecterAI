@@ -4,9 +4,26 @@ import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useFile } from "@/lib/FileContext";
 
+import { Auth } from "@/components/Auth";
+
 export default function Home() {
   const router = useRouter();
   const { file, setFile } = useFile();
+  // const supabase = createClientComponentClient<Database>()
+
+  // useEffect(() => {
+  //   const checkSession = async () => {
+  //     const { data, error } = await supabase.auth.getUser()
+  //     if (error || !data?.user) {
+  //       router.push('/login')
+  //     }
+  //   }
+  //   checkSession()
+    
+  // }, [router])
+
+  // check if the user is authorized
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -24,6 +41,7 @@ export default function Home() {
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+      <Auth authorized={true} />
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
         <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
           <li className="mb-2">
