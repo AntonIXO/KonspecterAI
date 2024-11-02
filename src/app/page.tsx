@@ -3,10 +3,25 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useFile } from "@/lib/FileContext";
+import { createClient } from '@/utils/supabase/client'
+import { useEffect, useState } from "react";
+import { Auth } from "@/components/Auth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
   const router = useRouter();
   const { file, setFile } = useFile();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  
+  const supabase = createClient()
+  
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getUser()
+      setIsAuthenticated(!!data?.user);
+    }
+    checkSession()
+  }, [])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -21,6 +36,25 @@ export default function Home() {
       router.push("/reader/pdf");
     }
   };
+
+  if (isAuthenticated === false) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Auth />
+      </div>
+    );
+  }
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="w-[400px] space-y-4">
+          <Skeleton className="h-[40px] w-full" />
+          <Skeleton className="h-[400px] w-full rounded-lg" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
