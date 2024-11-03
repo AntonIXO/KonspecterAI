@@ -1,6 +1,7 @@
 services:
   ollama:
     image: ollama/ollama:latest
+    container_name: conspecter_ollama
     deploy:
       resources:
         reservations:
@@ -12,3 +13,17 @@ services:
     network_mode: "host"
     volumes:
        - ./ollama:/root/.ollama
+  frontend:
+    image: git.mootfrost.dev/aireader/web-app_frontend:latest
+    container_name: conspecter_frontend
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.mootfrost_dev.rule=Host(`read.mootfrost.dev`)
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - OLLAMA_URL=http://ollama:11434
+    build: .
+    ports:
+      - "7778:80"
