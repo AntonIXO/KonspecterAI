@@ -13,6 +13,8 @@ import { TextSelection } from "@/components/TextSelection";
 import { createOllama } from "ollama-ai-provider";
 import { generateText } from "ai";
 import { Summary } from "@/components/Summary";
+import { ReaderSidebar } from "@/components/reader-sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -119,13 +121,15 @@ export default function PDFReader() {
 
   return (
     <div className="relative min-h-screen">
-      <TextSelection onSummarize={handleSummarize} />
       <Summary text={summary} open={summaryOpen} setOpen={setSummaryOpen} />
       <div className="min-h-screen p-8 flex flex-col items-center">
         <div className="w-full max-w-6xl">
-          <Button onClick={() => router.push("/")} className="mb-4">
-            ← Back
-          </Button>
+          <div className="flex items-center gap-4 mb-4">
+            <Button onClick={() => router.push("/")} className="">
+              ← Back
+            </Button>
+            <SidebarTrigger className="ml-auto" />
+          </div>
 
           <Card className="w-full overflow-hidden bg-white">
             <CardContent className="p-6">
@@ -198,6 +202,8 @@ export default function PDFReader() {
           </Card>
         </div>
       </div>
+      <ReaderSidebar />
+      <TextSelection onSummarize={handleSummarize} />
     </div>
   );
 }
