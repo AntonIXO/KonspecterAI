@@ -71,7 +71,7 @@ export default function PDFReader() {
     // Handle PDF text summarization
     console.log("Summarizing text:", t);
     const resp = await generateText({
-      model: ollama("llama3.2:1b"),
+      model: ollama(process.env.OLLAMA_MODEL || "llama3.2:1b"),
       prompt: "Summarize given text. Output summarize only. Follow original text language. Text: " + t,
     });
     setSummary(resp.text);

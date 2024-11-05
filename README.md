@@ -1,36 +1,101 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KonspecterAI - Smart Reading Assistant
+
+KonspecterAI is a modern web application built with Next.js that helps users read and analyze books more effectively using AI-powered features.
+
+## Features
+
+- **Multi-Format Support**
+  - PDF viewer with page navigation and text selection
+  - EPUB reader support
+  - Last opened file persistence
+
+- **AI-Powered Analysis**
+  - Text summarization of selected passages
+  - Multiple compression ratios (1:1, 1:2, 1:3)
+  - Contextual understanding of content
+
+- **Authentication**
+  - Email/Password authentication
+  - Google OAuth integration
+  - Protected routes and user sessions
+
+- **Modern UI**
+  - Responsive design using Tailwind CSS
+  - Dark/Light mode support
+  - Collapsible sidebar navigation
+  - Mobile-friendly interface
+
+## Tech Stack
+
+- **Frontend**
+  - Next.js 14 (App Router)
+  - React 19
+  - Tailwind CSS
+  - shadcn/ui components
+  - react-pdf for PDF rendering
+  - react-reader for EPUB support
+
+- **Backend & Services**
+  - Supabase for authentication and database
+  - Ollama for AI text processing
+  - Docker for containerization
+
+- **Development**
+  - TypeScript
+  - ESLint
+  - Prettier
+  - CI/CD with Gitea Actions
 
 ## Getting Started
 
-First, run the development server:
-
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <repository-url>
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+yarn install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+```
+Required variables:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Start the development server:
+```bash
+yarn dev
+```
 
-## Learn More
+5. For production:
+```bash
+yarn build
+yarn start
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Docker Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The project includes Docker support for easy deployment:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+docker compose up -d
+```
 
-## Deploy on Vercel
+This will start:
+- Frontend service on port 7778
+- Ollama service for AI processing
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+├── app/                 # Next.js app router pages
+├── components/         # React components
+├── lib/               # Utilities and contexts
+├── utils/             # Helper functions
+└── hooks/             # Custom React hooks
+```

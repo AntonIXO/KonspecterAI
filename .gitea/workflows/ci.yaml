@@ -7,66 +7,73 @@ on:
     branches: [ main, master ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'yarn'
-          
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-        
-      - name: Lint
-        run: yarn lint
-        
-      - name: Type check
-        run: yarn tsc --noEmit
-        
-      - name: Build
-        run: yarn build
-        
-      - name: Cache build output
-        uses: actions/cache@v3
-        with:
-          path: |
-            .next
-            node_modules
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-nextjs-
-
-  # deploy:
-  #   needs: build
+  # build:
   #   runs-on: ubuntu-latest
-  #   if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    
-  #   steps:
-  #     - name: Deploy to VM
-  #       uses: appleboy/ssh-action@master
-  #       with:
-  #         host: ${{ secrets.VM_HOST }}
-  #         username: ${{ secrets.VM_USERNAME }}
-  #         key: ${{ secrets.VM_SSH_KEY }}
-  #         script: |
-  #           cd /path/to/your/app
-  #           git pull
-  #           yarn install --frozen-lockfile
-  #           yarn build
-  #           pm2 reload all
 
-  #     - name: Cleanup old deployment
-  #       uses: appleboy/ssh-action@master
+  #   steps:
+  #     - uses: actions/checkout@v4
+      
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
   #       with:
-  #         host: ${{ secrets.VM_HOST }}
-  #         username: ${{ secrets.VM_USERNAME }}
-  #         key: ${{ secrets.VM_SSH_KEY }}
-  #         script: |
-  #           # Keep only the last 2 deployments
-  #           cd /path/to/your/app
-  #           ls -t | tail -n +3 | xargs rm -rf
+  #         node-version: '22'
+  #         cache: 'yarn'
+          
+  #     - name: Install dependencies
+  #       run: yarn install --frozen-lockfile
+        
+  #     - name: Lint
+  #       run: yarn lint
+        
+  #     - name: Type check
+  #       run: yarn tsc --noEmit
+        
+  #     - name: Build
+  #       run: yarn build
+        
+  #     - name: Cache build output
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: |
+  #           .next
+  #           node_modules
+  #         key: ${{ runner.os }}-nextjs-${{ hashFiles('**/yarn.lock') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-nextjs-
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+      - name: Deploy to VM
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd /web-app
+            git pull
+            
+            # Create/update .env file with secrets
+            cat > .env.local << EOL
+            NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+            NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            EOL
+            
+            yarn install --frozen-lockfile
+            yarn build
+            sv restart ai
+
+      - name: Cleanup old deployment
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: ${{ secrets.VM_USERNAME }}
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            # Keep only the last 2 deployments
+            cd /web-app
+            ls -t | tail -n +3 | xargs rm -rf

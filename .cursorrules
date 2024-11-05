@@ -1,3 +1,5 @@
 Use shadcn/ui components and tailwind css. 
 
 This is a Next.js project. Use app router. Use server side rendering if possible.
+
+Use yarn instead of npm.
