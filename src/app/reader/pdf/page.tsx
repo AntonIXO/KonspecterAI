@@ -129,14 +129,27 @@ export default function PDFReader() {
   }
 
   // Add this function to extract text from the current page
-  const handlePageSummarize = async () => {
+  const handlePageSummarize = async (type: 'short' | 'full') => {
     try {
-      // May be better. Not sure
       const page = document.querySelector('.react-pdf__Page')
       if (page) {
         const textContent = page.textContent
         if (textContent) {
-          await handleSummarize(textContent);
+          const prompt = type === 'short' 
+            ? "<|start_header_id|>system<|end_header_id|> You are a precise summarization assistant. Your task is to create extremely concise summaries of 2-5 sentences that capture the most essential information. Focus only on the core message or key findings. Avoid any unnecessary details or explanations. Rules: 1. Maximum 5 sentences 2. Include only the most crucial points 3. Use clear, direct language 4. Maintain factual accuracy 5. No additional commentary Text:<|eot_id|> " 
+            : "<|start_header_id|>system<|end_header_id|> You are a highly skilled AI assistant specialized in creating comprehensive summaries of any written content. Your summaries should be clear, structured, and adaptable to both technical and non-technical material. Follow these guidelines: 1. Begin with a brief overview 2. Break down complex concepts into digestible sections 3. Highlight key points and important terminology 4. Include practical applications or implications when relevant 5. Maintain the original content's technical accuracy 6. Use clear headings and bullet points for better readability For technical content: - Define specialized terms - Explain technical concepts clearly - Include relevant code examples or technical specifications - Note any prerequisites or dependencies For narrative content: - Identify main themes and ideas - Outline plot or argument progression - Note significant quotes or examples - Discuss broader implications Text:<|eot_id|> ";
+          
+          setSummaryOpen(true);
+          setSummary(""); // Reset summary before starting new stream
+          
+          const stream = await streamText({
+            model: ollama(type === 'short' ? "llama3.2:1b" : "llama3.2:3b"),
+            prompt: prompt + textContent,
+          });
+
+          for await (const chunk of stream.textStream) {
+            setSummary(prev => prev + chunk);
+          }
         }
       }
     } catch (error) {

@@ -65,14 +65,37 @@ const baseData: { aiFeatures: FeatureSection[] } = {
 
 // Add type for props
 interface ReaderSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  onSummarizePage?: () => void;
+  onSummarizePage?: (type: 'short' | 'full') => void;
 }
+
+// Add type for summary options
+type SummaryOption = {
+  title: string;
+  type: 'short' | 'full';
+}
+
+// Add summary options
+const summaryOptions: SummaryOption[] = [
+  { title: "Quick Summary", type: "short" },
+  { title: "Detailed Summary", type: "full" },
+]
 
 export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps) {
   const { compressionMode, setCompressionMode } = useSidebar()
   const [summaries, setSummaries] = useState<MenuItem[]>([])
   const [selectedSummary, setSelectedSummary] = useState<MenuItem | null>(null)
   const supabase = createClient()
+
+  // Add state to track open sections
+  const [openSections, setOpenSections] = useState<string[]>([]);
+
+  // Add effect to close sections when sidebar collapses
+  const { state } = useSidebar()
+  useEffect(() => {
+    if (state === 'collapsed') {
+      setOpenSections([]);
+    }
+  }, [state]);
 
   useEffect(() => {
     const fetchSummaries = async () => {
@@ -148,13 +171,32 @@ export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps)
           <SidebarGroup className="mb-4">
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  className="w-full justify-center bg-gradient-to-r from-blue-600 to-violet-500 text-white hover:from-blue-700 hover:to-violet-600"
-                  onClick={onSummarizePage}
-                >
-                  <Zap className="ml-2" />
-                  <span>Summarize Page</span>
-                </SidebarMenuButton>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuButton 
+                      className="w-full justify-center bg-gradient-to-r from-blue-600 to-violet-500 text-white hover:from-blue-700 hover:to-violet-600"
+                      tooltip="Summarize Page"
+                    >
+                      <Zap />
+                      <span className="group-data-[collapsible=icon]:hidden">Summarize Page</span>
+                      <ChevronRight className="ml-auto group-data-[collapsible=icon]:hidden" />
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    side="right"
+                    className="w-[--radix-popper-anchor-width]"
+                  >
+                    {summaryOptions.map((option) => (
+                      <DropdownMenuItem 
+                        key={option.type}
+                        onClick={() => onSummarizePage?.(option.type)}
+                        className="flex items-center"
+                      >
+                        <span>{option.title}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
@@ -167,13 +209,21 @@ export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps)
                   key={section.title}
                   asChild
                   className="group/collapsible"
+                  open={openSections.includes(section.title)}
+                  onOpenChange={(isOpen) => {
+                    setOpenSections(prev => 
+                      isOpen 
+                        ? [...prev, section.title]
+                        : prev.filter(title => title !== section.title)
+                    );
+                  }}
                 >
                   <SidebarMenuItem>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton tooltip={section.title}>
                         <section.icon />
-                        <span>{section.title}</span>
-                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        <span className="group-data-[collapsible=icon]:hidden">{section.title}</span>
+                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
@@ -183,13 +233,14 @@ export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps)
                             <SidebarMenuButton
                               onClick={() => handleSummaryClick(item)}
                               className="cursor-pointer"
+                              tooltip={item.title}
                             >
                               {item.icon && typeof item.icon === 'string' ? (
                                 <span className="mr-2">{item.icon}</span>
                               ) : item.icon ? (
                                 <item.icon className="mr-2 h-4 w-4" />
                               ) : null}
-                              <span>{item.title}</span>
+                              <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         ))}
@@ -203,10 +254,12 @@ export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps)
             <SidebarMenuItem>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton>
+                  <SidebarMenuButton tooltip="Compression Mode">
                     <Bot className="mr-2" />
-                    <span>Compression mode: {compressionMode}</span>
-                    <ChevronRight className="ml-auto" />
+                    <span className="group-data-[collapsible=icon]:hidden">
+                      Compression mode: {compressionMode}
+                    </span>
+                    <ChevronRight className="ml-auto group-data-[collapsible=icon]:hidden" />
                   </SidebarMenuButton>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
