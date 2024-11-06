@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { TextSelection } from "@/components/TextSelection";
 
 import { createOllama } from "ollama-ai-provider";
-import { generateText } from "ai";
+import { streamText } from "ai";
 import { Summary } from "@/components/Summary";
 import { ReaderSidebar } from "@/components/reader-sidebar";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
@@ -58,14 +58,22 @@ export default function PDFReader() {
   }, []);
 
   const handleSummarize = async (t: string) => {
-    // Handle PDF text summarization
-    console.log("Summarizing text:", t);
-    const resp = await generateText({
-      model: ollama(process.env.OLLAMA_MODEL || "llama3.2:1b"),
-      prompt: "Summarize given text. Output summarize only. Follow original text language. Text: " + t,
-    });
-    setSummary(resp.text);
     setSummaryOpen(true);
+    setSummary(""); // Reset summary before starting new stream
+    
+    try {
+        const stream = await streamText({
+            model: ollama(process.env.OLLAMA_MODEL || "llama3.2:3b"),
+            prompt: "Summarize given text. Output summarize only. Follow original text language. Text: " + t,
+        });
+
+        for await (const chunk of stream.textStream) {
+            setSummary(prev => prev + chunk);
+        }
+    } catch (error) {
+        console.error("Error generating summary:", error);
+        setSummary("Error generating summary. Please try again.");
+    }
   };
 
   useEffect(() => {
