@@ -105,6 +105,16 @@ export default function PDFReader() {
   //   }
   // }, [handleWheel]);
 
+  const handleItemClick = useCallback(({ pageNumber }: { pageNumber: string | number }) => {
+    if (typeof pageNumber === 'number') {
+      setCurrentPage(pageNumber);
+    } else {
+      const page = parseInt(pageNumber, 10);
+      if (!isNaN(page)) {
+        setCurrentPage(page);
+      }
+    }
+  }, []);
 
   if (!file) {
     return null;
@@ -148,6 +158,7 @@ export default function PDFReader() {
                     file={file}
                     onLoadSuccess={onDocumentLoadSuccess}
                     className="max-w-full pdf-container"
+                    onItemClick={handleItemClick}
                   >
                     <Page
                       pageNumber={currentPage}
