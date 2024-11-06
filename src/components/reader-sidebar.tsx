@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Bot, ChevronRight, MessageSquare, Zap, LucideIcon, ScrollText } from "lucide-react"
+import { Bot, ChevronRight, Zap, LucideIcon, ScrollText } from "lucide-react"
 import { useEffect, useState } from 'react'
 import { createClient } from "@/utils/supabase/client";
 
@@ -297,7 +297,7 @@ export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps)
 
       <SummaryDialog
         open={!!selectedSummary}
-        onOpenChange={(open: any) => !open && setSelectedSummary(null)}
+        onOpenChange={(open: boolean) => !open && setSelectedSummary(null)}
         title="Summary"
         content={selectedSummary?.content || ''}
       />

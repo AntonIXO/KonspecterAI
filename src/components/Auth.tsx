@@ -1,3 +1,5 @@
+"use client"
+
 import * as React from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -5,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { login, signup } from "@/app/login/actions"
-import { useFormStatus } from 'react-dom'
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useState } from 'react'
 import type { AuthResponse } from '@/app/login/actions'

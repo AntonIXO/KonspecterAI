@@ -3,9 +3,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/dialog"
-import { X } from "lucide-react"
 
 interface SummaryDialogProps {
   open: boolean
