@@ -14,7 +14,8 @@ import { createOllama } from "ollama-ai-provider";
 import { generateText } from "ai";
 import { Summary } from "@/components/Summary";
 import { ReaderSidebar } from "@/components/reader-sidebar";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -31,18 +32,7 @@ export default function PDFReader() {
   const [inputValue, setInputValue] = useState<string>(String(currentPage));
   const [summary, setSummary] = useState<string>("");
   const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
-
-  // This causes infinite re-renders
-  // const [containerRef, setContainerRef] = useState<HTMLElement | null>(null);
-  // const [containerWidth, setContainerWidth] = useState<number>();
-  
-  // const onResize = useCallback<ResizeObserverCallback>((entries) => {
-  //   const [entry] = entries;
-  //   if (entry) {
-  //     setContainerWidth(entry.contentRect.width);
-  //   }
-  // }, []);
-  // useResizeObserver(containerRef, {}, onResize);
+  const { state } = useSidebar();
 
   useEffect(() => {
     if (!file) {
@@ -139,7 +129,11 @@ export default function PDFReader() {
   return (
     <div className="relative min-h-screen">
       <Summary text={summary} open={summaryOpen} setOpen={setSummaryOpen} />
-      <div className="min-h-screen p-8 flex flex-col items-center">
+      <div className={cn(
+        "min-h-screen p-4 flex flex-col items-center transition-[margin] duration-200 ease-linear",
+        // Add margin when sidebar is expanded
+        "md:ml-0 md:data-[sidebar-state=expanded]:ml-48"
+      )} data-sidebar-state={state}>
         <div className="w-full max-w-6xl">
           <div className="flex items-center gap-4 mb-4">
             <Button onClick={() => router.push("/")} className="">
@@ -218,7 +212,7 @@ export default function PDFReader() {
           </Card>
         </div>
       </div>
-      <ReaderSidebar onSummarizePage={handlePageSummarize} />
+      <ReaderSidebar onSummarizePage={handlePageSummarize} variant="floating"/>
       <SidebarTrigger />
       <TextSelection onSummarize={handleSummarize} />
     </div>

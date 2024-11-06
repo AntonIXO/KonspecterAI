@@ -32,9 +32,13 @@ export default function RootLayout({
       >
           <SidebarProvider >
             <FileProvider>
-              {children}
-            </FileProvider>
-          </SidebarProvider>
+            <main className="flex-1">
+              <div className="container mx-auto">
+                {children}
+              </div>
+            </main>
+          </FileProvider>
+        </SidebarProvider>
       </body>
     </html>
   );

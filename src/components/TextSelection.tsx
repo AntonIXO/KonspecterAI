@@ -26,7 +26,7 @@ export function TextSelection({ onSummarize }: TextSelectionProps) {
       }
 
       const text = selectedText.toString().trim();
-      if (!text) {
+      if (!text || text.length < 5) {
         setSelection({ text: "", position: null });
         return;
       }

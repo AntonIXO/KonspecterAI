@@ -39,13 +39,32 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
       // Convert File to base64 and save
       const reader = new FileReader();
       reader.onload = () => {
-        const base64 = (reader.result as string).split(',')[1];
-        const fileData = {
-          name: newFile.name,
-          type: newFile.type,
-          data: base64
-        };
-        localStorage.setItem('lastOpenedFile', JSON.stringify(fileData));
+        try {
+          const base64 = (reader.result as string).split(',')[1];
+          // Check file size before attempting to save
+          const estimatedSize = base64.length * 0.75; // base64 encoding increases size by ~33%
+          const maxSize = 5 * 1024 * 1024; // 5MB limit (adjust as needed)
+          
+          if (estimatedSize > maxSize) {
+            console.warn('File too large to save in localStorage');
+            return;
+          }
+
+          const fileData = {
+            name: newFile.name,
+            type: newFile.type,
+            data: base64
+          };
+          localStorage.setItem('lastOpenedFile', JSON.stringify(fileData));
+        } catch (error) {
+          console.warn('Failed to save file to localStorage:', error);
+          // Optionally clear localStorage if it's full
+          try {
+            localStorage.removeItem('lastOpenedFile');
+          } catch (e) {
+            console.error('Failed to clear localStorage:', e);
+          }
+        }
       };
       reader.readAsDataURL(newFile);
     } else {
