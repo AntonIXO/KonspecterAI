@@ -128,7 +128,6 @@ export default function PDFReader() {
             <Button onClick={() => router.push("/")} className="">
               ← Back
             </Button>
-            <SidebarTrigger className="ml-auto" />
           </div>
 
           <Card className="w-full overflow-hidden bg-white">
@@ -203,6 +202,7 @@ export default function PDFReader() {
         </div>
       </div>
       <ReaderSidebar />
+      <SidebarTrigger />
       <TextSelection onSummarize={handleSummarize} />
     </div>
   );

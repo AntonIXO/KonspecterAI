@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { FileProvider } from "@/lib/FileContext";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { CompressionProvider } from "@/lib/CompressionContext";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -31,13 +30,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <CompressionProvider>
-          <SidebarProvider>
+          <SidebarProvider >
             <FileProvider>
               {children}
             </FileProvider>
           </SidebarProvider>
-        </CompressionProvider>
       </body>
     </html>
   );

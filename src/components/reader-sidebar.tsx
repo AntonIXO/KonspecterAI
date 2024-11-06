@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import { Bot, ChevronRight, MessageSquare, Zap, LucideIcon } from "lucide-react"
-import { useCompression } from "@/lib/CompressionContext"
 
 import {
   Collapsible,
@@ -26,6 +25,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { NavUser } from "@/components/nav-user"
 
@@ -62,7 +62,7 @@ const data: { aiFeatures: FeatureSection[] } = {
 }
 
 export function ReaderSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { mode, setMode } = useCompression()
+  const { compressionMode, setCompressionMode } = useSidebar()
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -131,7 +131,7 @@ export function ReaderSidebar({ ...props }: React.ComponentProps<typeof Sidebar>
               <DropdownMenuTrigger asChild>
                 <SidebarMenuButton>
                   <Bot className="mr-2" />
-                  <span>Compression mode: {mode}</span>
+                  <span>Compression mode: {compressionMode}</span>
                   <ChevronRight className="ml-auto" />
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
@@ -142,7 +142,7 @@ export function ReaderSidebar({ ...props }: React.ComponentProps<typeof Sidebar>
                 {compressionModes.map((item) => (
                   <DropdownMenuItem 
                     key={item.value}
-                    onClick={() => setMode(item.value)}
+                    onClick={() => setCompressionMode(item.value)}
                     className="flex items-center"
                   >
                     {typeof item.icon === 'string' ? (
@@ -151,7 +151,7 @@ export function ReaderSidebar({ ...props }: React.ComponentProps<typeof Sidebar>
                       <item.icon className="mr-2 h-4 w-4" />
                     )}
                     <span>{item.title}</span>
-                    {mode === item.value && (
+                    {compressionMode === item.value && (
                       <span className="ml-auto text-primary">✓</span>
                     )}
                   </DropdownMenuItem>
