@@ -115,9 +115,26 @@ export default function PDFReader() {
   //   }
   // }, [handleWheel]);
 
+
   if (!file) {
     return null;
   }
+
+  // Add this function to extract text from the current page
+  const handlePageSummarize = async () => {
+    try {
+      // May be better. Not sure
+      const page = document.querySelector('.react-pdf__Page')
+      if (page) {
+        const textContent = page.textContent
+        if (textContent) {
+          await handleSummarize(textContent);
+        }
+      }
+    } catch (error) {
+      console.error('Error extracting text:', error);
+    }
+  };
 
   return (
     <div className="relative min-h-screen">
@@ -201,7 +218,7 @@ export default function PDFReader() {
           </Card>
         </div>
       </div>
-      <ReaderSidebar />
+      <ReaderSidebar onSummarizePage={handlePageSummarize} />
       <SidebarTrigger />
       <TextSelection onSummarize={handleSummarize} />
     </div>

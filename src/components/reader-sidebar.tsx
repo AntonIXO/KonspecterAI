@@ -61,7 +61,12 @@ const data: { aiFeatures: FeatureSection[] } = {
   ],
 }
 
-export function ReaderSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+// Add type for props
+interface ReaderSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  onSummarizePage?: () => void;
+}
+
+export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps) {
   const { compressionMode, setCompressionMode } = useSidebar()
 
   return (
@@ -78,7 +83,10 @@ export function ReaderSidebar({ ...props }: React.ComponentProps<typeof Sidebar>
         <SidebarGroup className="mb-4">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton className="w-full justify-center bg-gradient-to-r from-blue-600 to-violet-500 text-white hover:from-blue-700 hover:to-violet-600">
+              <SidebarMenuButton 
+                className="w-full justify-center bg-gradient-to-r from-blue-600 to-violet-500 text-white hover:from-blue-700 hover:to-violet-600"
+                onClick={onSummarizePage}
+              >
                 <Zap className="ml-2" />
                 <span>Summarize Page</span>
               </SidebarMenuButton>
