@@ -19,6 +19,13 @@
   dependencies:
     json-schema "^0.4.0"
 
+"@ai-sdk/provider@^0.0.21":
+  version "0.0.21"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/provider/-/provider-0.0.21.tgz#1c4ad334efc3b9275164886262a950a31150b807"
+  integrity sha512-9j95uaPRxwYkzQdkl4XO/MmWWW5c5vcVSXtqvALpD9SMB9fzH46dO3UN4VbOJR2J3Z84CZAqgZu5tNlkptT9qQ==
+  dependencies:
+    json-schema "0.4.0"
+
 "@ai-sdk/react@0.0.70":
   version "0.0.70"
   resolved "https://registry.yarnpkg.com/@ai-sdk/react/-/react-0.0.70.tgz#25dee1755c67da2ac0ed4f207102de93d7196f44"
@@ -726,6 +733,16 @@
     rimraf "^3.0.2"
     semver "^7.3.5"
     tar "^6.1.11"
+
+"@mediapipe/tasks-genai@0.10.14":
+  version "0.10.14"
+  resolved "https://registry.yarnpkg.com/@mediapipe/tasks-genai/-/tasks-genai-0.10.14.tgz#b01b20b8c3162b177dba24322323510144477aea"
+  integrity sha512-2XYVRJl/ylWLmBRzm7TVrl2yF8tKK2HCWypBno1KIVGPwY2i4mFlzt05itqBsTEwZbVYS/rZ15gLE9ypc6Nw3w==
+
+"@mediapipe/tasks-text@0.10.14":
+  version "0.10.14"
+  resolved "https://registry.yarnpkg.com/@mediapipe/tasks-text/-/tasks-text-0.10.14.tgz#ab72c095b9aff4dab14e34b9d386ac6ea0025e9b"
+  integrity sha512-hQU/t9df83lU083sjbX69ImipPOqfvdMnc0pMk44L0QkRXKjSp9q1OYVhA5ePOe1bUmEUzaYSPPTwz+mNhFqhw==
 
 "@next/env@15.0.2":
   version "15.0.2"
@@ -1844,6 +1861,16 @@ chownr@^3.0.0:
   resolved "https://registry.yarnpkg.com/chownr/-/chownr-3.0.0.tgz#9855e64ecd240a9cc4267ce8a4aa5d24a1da15e4"
   integrity sha512-+IxzY9BZOQd/XuYPRmrvEVjF/nqj5kgT4kEq7VofrDoM1MxoRjEWkrCC3EtLi59TVawxTAn+orJwFQcrqEN1+g==
 
+chrome-ai@^1.11.1:
+  version "1.11.1"
+  resolved "https://registry.yarnpkg.com/chrome-ai/-/chrome-ai-1.11.1.tgz#e864903d546f0010db74cc07a67709c7a08347ae"
+  integrity sha512-d2JNIjdE5HtKSbUZf17BBeDLts/8S+MGOBPSDB0vUXW/B/7ZVMJWq5ivvMmSJt82gszvuw/T1RR/eq42GYXlOQ==
+  dependencies:
+    "@ai-sdk/provider" "^0.0.21"
+    "@mediapipe/tasks-genai" "0.10.14"
+    "@mediapipe/tasks-text" "0.10.14"
+    debug "^4.3.6"
+
 class-variance-authority@^0.7.0:
   version "0.7.0"
   resolved "https://registry.yarnpkg.com/class-variance-authority/-/class-variance-authority-0.7.0.tgz#1c3134d634d80271b1837452b06d821915954522"
@@ -2045,7 +2072,7 @@ data-view-byte-offset@^1.0.0:
     es-errors "^1.3.0"
     is-data-view "^1.0.1"
 
-debug@4, debug@^4.0.0, debug@^4.1.0, debug@^4.3.1, debug@^4.3.2, debug@^4.3.4, debug@^4.3.5:
+debug@4, debug@^4.0.0, debug@^4.1.0, debug@^4.3.1, debug@^4.3.2, debug@^4.3.4, debug@^4.3.5, debug@^4.3.6:
   version "4.3.7"
   resolved "https://registry.yarnpkg.com/debug/-/debug-4.3.7.tgz#87945b4151a011d76d95a198d7111c865c360a52"
   integrity sha512-Er2nc/H7RrMXZBFCEim6TCmMk02Z8vLC2Rbi1KEBggpo0fS6l0S1nnapwmIi3yW/+GOJap1Krg4w0Hg80oCqgQ==
@@ -3401,7 +3428,7 @@ json-schema-traverse@^0.4.1:
   resolved "https://registry.yarnpkg.com/json-schema-traverse/-/json-schema-traverse-0.4.1.tgz#69f6a87d9513ab8bb8fe63bdb0979c448e684660"
   integrity sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==
 
-json-schema@^0.4.0:
+json-schema@0.4.0, json-schema@^0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/json-schema/-/json-schema-0.4.0.tgz#f7de4cf6efab838ebaeb3236474cbba5a1930ab5"
   integrity sha512-es94M3nTIfsEPisRafak+HDLfHXnKBhV3vU5eqPcS3flIWqcxJWgXHXiey3YrpaNsanY5ei1VoYEbOzijuq9BA==

@@ -10,6 +10,7 @@ import { login, signup } from "@/app/login/actions"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useState } from 'react'
 import type { AuthResponse } from '@/app/login/actions'
+import { KeySquare } from "lucide-react"
 
 export function Auth() {
   const [message, setMessage] = useState<AuthResponse>({})
@@ -74,6 +75,19 @@ export function Auth() {
                     type="password"
                     required
                   />
+                </div>
+                <div className="text-right">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="px-0 text-muted-foreground hover:text-primary transition-colors flex items-center gap-2" 
+                    asChild
+                  >
+                    <a href="/reset-password">
+                      <KeySquare className="h-4 w-4" />
+                      Forgot password?
+                    </a>
+                  </Button>
                 </div>
               </CardContent>
               <CardFooter>

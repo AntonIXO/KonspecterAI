@@ -7,6 +7,7 @@ import { createClient } from '@/utils/supabase/client'
 import { useEffect, useState } from "react";
 import { Auth } from "@/components/Auth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NavUser } from "@/components/nav-user";
 
 export default function Home() {
   const router = useRouter();
@@ -79,6 +80,9 @@ export default function Home() {
             Load File
           </Button>
         </div>
+        <div className="fixed bottom-4 left-4 z-50">
+        <NavUser />
+      </div>
       </main>
     </div>
   );

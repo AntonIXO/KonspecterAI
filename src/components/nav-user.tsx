@@ -50,7 +50,7 @@ export function NavUser() {
   const handleLogout = async () => {
     console.log("Logging out")
     await supabase.auth.signOut({ scope: 'local' })
-    router.push('/')
+    router.push('/login')
   }
 
   return (
