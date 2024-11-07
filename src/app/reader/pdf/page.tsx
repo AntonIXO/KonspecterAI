@@ -33,7 +33,12 @@ export default function PDFReader() {
   const [summary, setSummary] = useState<string>("");
   const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
   const { state } = useSidebar();
-  const ollama = createOllama();
+  const ollama = createOllama({
+    baseURL: process.env.OLLAMA_BASE_URL,
+    headers: {
+      Authorization: `Bearer ${process.env.OLLAMA_API_KEY}`,
+    },
+  });
   const [windowWidth, setWindowWidth] = useState<number>(maxWidth);
 
   useEffect(() => {

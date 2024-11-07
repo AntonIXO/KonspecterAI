@@ -14,13 +14,19 @@ jobs:
         name: Set up Docker BuildX
         uses: docker/setup-buildx-action@v3
       - 
-        name: Create .env file
+        name: add .env
         run: |
-          touch .env
-          echo "NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}" >> .env
-          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}" >> .env
+          echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" >> .env
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env
+          echo "OLLAMA_BASE_URL=${{ secrets.OLLAMA_BASE_URL }}" >> .env
+          echo "OLLAMA_API_KEY=${{ secrets.OLLAMA_API_KEY }}" >> .env
       -
         name: build
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          OLLAMA_BASE_URL: ${{ secrets.OLLAMA_BASE_URL }}
+          OLLAMA_API_KEY: ${{ secrets.OLLAMA_API_KEY }}
         run: docker compose build
       -
         name: up

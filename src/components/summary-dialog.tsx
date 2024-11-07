@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import ReactMarkdown from 'react-markdown'
 
 interface SummaryDialogProps {
   open: boolean
@@ -19,8 +20,8 @@ export function SummaryDialog({ open, onOpenChange, title, content }: SummaryDia
         <DialogHeader>
           <DialogTitle className="pr-8">{title}</DialogTitle>
         </DialogHeader>
-        <div className="mt-2 max-h-[60vh] overflow-y-auto">
-          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{content}</p>
+        <div className="mt-2 max-h-[60vh] overflow-y-auto prose prose-sm dark:prose-invert">
+          <ReactMarkdown>{content}</ReactMarkdown>
         </div>
       </DialogContent>
     </Dialog>

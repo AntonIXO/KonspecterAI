@@ -52,6 +52,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USERNAME }}
           key: ${{ secrets.VM_SSH_KEY }}
+          port: ${{ secrets.VM_PORT }}
           script: |
             cd /web-app
             git pull
@@ -60,6 +61,8 @@ jobs:
             cat > .env.local << EOL
             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+            OLLAMA_BASE_URL=${{ secrets.OLLAMA_BASE_URL }}
+            OLLAMA_API_KEY=${{ secrets.OLLAMA_API_KEY }}
             EOL
             
             yarn install --frozen-lockfile

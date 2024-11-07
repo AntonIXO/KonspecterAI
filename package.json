@@ -38,6 +38,7 @@
     "react": "19.0.0-rc-69d4b800-20241021",
     "react-dom": "19.0.0-rc-69d4b800-20241021",
     "react-hook-form": "^7.53.1",
+    "react-markdown": "^9.0.1",
     "react-pdf": "^9.1.1",
     "react-reader": "^2.0.11",
     "shadcn": "^2.1.3",
@@ -48,6 +49,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",
