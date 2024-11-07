@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  compress: false, // brotli compression is handled by nginx
+  experimental: {
+    cssChunking: 'loose',
+  },
   async headers() {
     return [
       {
