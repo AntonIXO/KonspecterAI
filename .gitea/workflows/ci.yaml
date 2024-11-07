@@ -60,20 +60,20 @@ jobs:
             # Create/update .env file with secrets
             echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" > .env.local
             echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
-            echo "OLLAMA_BASE_URL=${{ secrets.OLLAMA_BASE_URL }}" >> .env.local
-            echo "OLLAMA_API_KEY=${{ secrets.OLLAMA_API_KEY }}" >> .env.local
+            echo "NEXT_PUBLIC_OLLAMA_BASE_URL=${{ secrets.OLLAMA_BASE_URL }}" >> .env.local
             
             yarn install --frozen-lockfile
             yarn build
-            sv restart ai
+            systemctl restart --user ai
 
-      - name: Cleanup old deployment
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USERNAME }}
-          key: ${{ secrets.VM_SSH_KEY }}
-          script: |
-            # Keep only the last 2 deployments
-            cd ./web-app
-            ls -t | tail -n +3 | xargs rm -rf
+      # - name: Cleanup old deployment
+      #   uses: appleboy/ssh-action@master
+      #   with:
+      #     host: ${{ secrets.VM_HOST }}
+      #     username: ${{ secrets.VM_USERNAME }}
+      #     key: ${{ secrets.VM_SSH_KEY }}
+      #     port: ${{ secrets.VM_PORT }}
+      #     script: |
+      #       # Keep only the last 2 deployments
+      #       cd ./web-app
+      #       ls -t | tail -n +3 | xargs rm -rf
