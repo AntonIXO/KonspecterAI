@@ -44,3 +44,4 @@ ollama/
 .env
 .env.local
 .env.production
+certificates
