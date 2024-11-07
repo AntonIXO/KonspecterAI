@@ -33,6 +33,8 @@ export default function PDFReader() {
   const [summary, setSummary] = useState<string>("");
   const [summaryOpen, setSummaryOpen] = useState<boolean>(false);
   const { state } = useSidebar();
+  const ollama = createOllama();
+  const [windowWidth, setWindowWidth] = useState<number>(maxWidth);
 
   useEffect(() => {
     if (!file) {
@@ -43,39 +45,18 @@ export default function PDFReader() {
     }
   }, [file, router]);
 
-  const ollama = createOllama();
-
+  // Setup reader
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
   };
-
   const goToNextPage = useCallback(() => {
     setCurrentPage((prev) => (prev < (numPages || 1) ? prev + 1 : prev));
   }, [numPages]);
-
   const goToPrevPage = useCallback(() => {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
   }, []);
 
-  const handleSummarize = async (t: string) => {
-    setSummaryOpen(true);
-    setSummary(""); // Reset summary before starting new stream
-    
-    try {
-        const stream = await streamText({
-            model: ollama(process.env.OLLAMA_MODEL || "llama3.2:3b"),
-            prompt: "<|start_header_id|>system<|end_header_id|> You are a precise summarization assistant. Your task is to create extremely concise summaries of 2-5 sentences that capture the most essential information. Focus only on the core message or key findings. Avoid any unnecessary details or explanations. Rules: 1. Maximum 5 sentences 2. Include only the most crucial points 3. Use clear, direct language 4. Maintain factual accuracy 5. No additional commentary 6. Follow original text language. Text:<|eot_id|> " + t,
-        });
-
-        for await (const chunk of stream.textStream) {
-            setSummary(prev => prev + chunk);
-        }
-    } catch (error) {
-        console.error("Error generating summary:", error);
-        setSummary("Error generating summary. Please try again.");
-    }
-  };
-
+  // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
@@ -94,25 +75,7 @@ export default function PDFReader() {
     setInputValue(String(currentPage));
   }, [currentPage]);
 
-  // Add wheel event handler
-  // const handleWheel = useCallback((e: WheelEvent) => {
-  //   if (e.deltaY > 0) {
-  //     goToNextPage();
-  //   } else if (e.deltaY < 0) {
-  //     goToPrevPage();
-  //   }
-  // }, [goToNextPage, goToPrevPage]);
-
-  // // Add wheel event listener
-  // useEffect(() => {
-  //   const documentElement = document.querySelector('.pdf-container');
-  //   if (documentElement) {
-  //     const wheelHandler = (e: Event) => handleWheel(e as WheelEvent);
-  //     documentElement.addEventListener('wheel', wheelHandler);
-  //     return () => documentElement.removeEventListener('wheel', wheelHandler);
-  //   }
-  // }, [handleWheel]);
-
+  // To fix links in the PDF
   const handleItemClick = useCallback(({ pageNumber }: { pageNumber: string | number }) => {
     if (typeof pageNumber === 'number') {
       setCurrentPage(pageNumber);
@@ -124,11 +87,7 @@ export default function PDFReader() {
     }
   }, []);
 
-  if (!file) {
-    return null;
-  }
-
-  // Add this function to extract text from the current page
+  // AI
   const handlePageSummarize = async (type: 'short' | 'full') => {
     try {
       const page = document.querySelector('.react-pdf__Page')
@@ -156,96 +115,126 @@ export default function PDFReader() {
       console.error('Error extracting text:', error);
     }
   };
+  const handleSummarize = async (t: string) => {
+    setSummaryOpen(true);
+    setSummary(""); // Reset summary before starting new stream
+    
+    try {
+        const stream = await streamText({
+            model: ollama(process.env.OLLAMA_MODEL || "llama3.2:3b"),
+            prompt: "<|start_header_id|>system<|end_header_id|> You are a precise summarization assistant. Your task is to create extremely concise summaries of 2-5 sentences that capture the most essential information. Focus only on the core message or key findings. Avoid any unnecessary details or explanations. Rules: 1. Maximum 5 sentences 2. Include only the most crucial points 3. Use clear, direct language 4. Maintain factual accuracy 5. No additional commentary 6. Follow original text language. Text:<|eot_id|> " + t,
+        });
+
+        for await (const chunk of stream.textStream) {
+            setSummary(prev => prev + chunk);
+        }
+    } catch (error) {
+        console.error("Error generating summary:", error);
+        setSummary("Error generating summary. Please try again.");
+    }
+  };
+
+  // Add useEffect to handle window width
+  useEffect(() => {
+    setWindowWidth(Math.min(maxWidth, window.innerWidth - 32));
+    
+    const handleResize = () => {
+      setWindowWidth(Math.min(maxWidth, window.innerWidth - 32));
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div className="relative min-h-screen">
       <Summary text={summary} open={summaryOpen} setOpen={setSummaryOpen} />
       <div className={cn(
         "min-h-screen p-4 flex flex-col items-center transition-[margin] duration-200 ease-linear",
-        // Add margin when sidebar is expanded
         "md:ml-0 md:data-[sidebar-state=expanded]:ml-48"
       )} data-sidebar-state={state}>
         <div className="w-full max-w-6xl">
           <div className="flex items-center gap-4 mb-4">
-            <Button onClick={() => router.push("/")} className="">
+            <SidebarTrigger />
+            <Button onClick={() => router.push("/")} className="w-full md:w-auto">
               ← Back
             </Button>
           </div>
 
           <Card className="w-full overflow-hidden bg-white">
-            <CardContent className="p-6">
-                <div className="w-full flex flex-col items-center">
-                  <Document
-                    file={file}
-                    onLoadSuccess={onDocumentLoadSuccess}
-                    className="max-w-full pdf-container"
-                    onItemClick={handleItemClick}
-                  >
-                    <Page
-                      pageNumber={currentPage}
-                      width={maxWidth}
-                      className="mb-4"
-                      renderTextLayer={true}
-                      renderAnnotationLayer={true}
-                    />
-                  </Document>
+            <CardContent className="p-2 sm:p-4 md:p-6">
+              <div className="w-full flex flex-col items-center">
+                <Document
+                  file={file}
+                  onLoadSuccess={onDocumentLoadSuccess}
+                  className="max-w-full pdf-container"
+                  onItemClick={handleItemClick}
+                >
+                  <Page
+                    pageNumber={currentPage}
+                    width={windowWidth}
+                    className="mb-4"
+                    renderTextLayer={true}
+                    renderAnnotationLayer={true}
+                  />
+                </Document>
 
-                  <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4 flex items-center justify-center gap-4">
-                    <Button
-                      onClick={goToPrevPage}
-                      disabled={currentPage <= 1}
-                      variant="outline"
-                    >
-                      Previous
-                    </Button>
-                    
-                    <div className="flex items-center gap-2">
-                      <span>Page <input
-                        type="number"
-                        min={1}
-                        max={numPages || 1}
-                        value={inputValue}
-                        onChange={(e) => {
-                          setInputValue(e.target.value);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            const newPage = parseInt(inputValue);
-                            if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
-                              setCurrentPage(newPage);
-                            } else {
-                              setInputValue(String(currentPage));
-                            }
-                          }
-                        }}
-                        onBlur={() => {
+                <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-2 sm:p-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+                  <Button
+                    onClick={goToPrevPage}
+                    disabled={currentPage <= 1}
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
+                    Previous
+                  </Button>
+                  
+                  <div className="flex items-center gap-2 text-sm sm:text-base">
+                    <span>Page <input
+                      type="number"
+                      min={1}
+                      max={numPages || 1}
+                      value={inputValue}
+                      onChange={(e) => {
+                        setInputValue(e.target.value);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
                           const newPage = parseInt(inputValue);
                           if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
                             setCurrentPage(newPage);
                           } else {
                             setInputValue(String(currentPage));
                           }
-                        }}
-                        className="w-16 px-2 py-1 border rounded"
-                      /> of {numPages}</span>
-                      
-                    </div>
-
-                    <Button
-                      onClick={goToNextPage}
-                      disabled={currentPage >= (numPages || 1)}
-                      variant="outline"
-                    >
-                      Next
-                    </Button>
+                        }
+                      }}
+                      onBlur={() => {
+                        const newPage = parseInt(inputValue);
+                        if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
+                          setCurrentPage(newPage);
+                        } else {
+                          setInputValue(String(currentPage));
+                        }
+                      }}
+                      className="w-12 sm:w-16 px-2 py-1 border rounded text-center"
+                    /> of {numPages}</span>
                   </div>
+
+                  <Button
+                    onClick={goToNextPage}
+                    disabled={currentPage >= (numPages || 1)}
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
       <ReaderSidebar onSummarizePage={handlePageSummarize} variant="floating"/>
-      <SidebarTrigger />
       <TextSelection onSummarize={handleSummarize} />
     </div>
   );

@@ -136,7 +136,7 @@ export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps)
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [supabase])
 
   // Combine base data with dynamic summaries
   const data = {
@@ -160,8 +160,8 @@ export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps)
     <>
       <Sidebar collapsible="icon" {...props}>
         <SidebarHeader>
-        <div className="px-4 py-2">
-            <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-violet-500 bg-clip-text text-transparent">
+          <div className="h-[52px] px-4 py-2">
+            <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-violet-500 bg-clip-text text-transparent group-data-[state=collapsed]:invisible">
               KonspecterAI
             </h1>
           </div>

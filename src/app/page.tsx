@@ -81,8 +81,8 @@ export default function Home() {
           </Button>
         </div>
         <div className="fixed bottom-4 left-4 z-50">
-        <NavUser />
-      </div>
+          {isAuthenticated && <NavUser />}
+        </div>
       </main>
     </div>
   );

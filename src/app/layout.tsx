@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { FileProvider } from "@/lib/FileContext";
@@ -22,6 +22,14 @@ export const metadata: Metadata = {
   title: "KonspecterAI",
   description: "Read smarter, not harder",
 };
+
+export const viewport: Viewport = {
+  themeColor: 'black',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: true,
+}
 
 export default function RootLayout({
   children,
