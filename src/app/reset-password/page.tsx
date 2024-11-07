@@ -31,9 +31,9 @@ export default function ResetPassword() {
         success: "Check your email for the password reset link"
       })
       setEmail('')
-    } catch (error) {
+    } catch (error: unknown) {
       setMessage({
-        error: "Error sending password reset email"
+        error: error instanceof Error ? error.message : "Error sending password reset email"
       })
     } finally {
       setLoading(false)
@@ -70,7 +70,7 @@ export default function ResetPassword() {
           <CardHeader>
             <CardTitle>Reset Password</CardTitle>
             <CardDescription>
-              Enter your email address and we'll send you a password reset link
+              Enter your email address and we&apos;ll send you a password reset link
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleResetPassword}>

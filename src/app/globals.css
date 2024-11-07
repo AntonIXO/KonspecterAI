@@ -86,3 +86,13 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes attention {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.1); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(0, 0, 0, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+}
+
+.animate-attention {
+  animation: attention 2s ease-in-out;
+}
