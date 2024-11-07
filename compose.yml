@@ -20,6 +20,8 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.mootfrost_dev.rule=Host(`read.mootfrost.dev`)
+    env_file:
+      - .env
     environment:
       - NEXT_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}

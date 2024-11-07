@@ -42,7 +42,6 @@ jobs:
   #           ${{ runner.os }}-nextjs-
 
   deploy:
-    needs: build
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     
