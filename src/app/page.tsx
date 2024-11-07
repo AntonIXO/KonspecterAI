@@ -1,13 +1,14 @@
 "use client"
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import { useFile } from "@/lib/FileContext";
 import { createClient } from '@/utils/supabase/client'
 import { useEffect, useState } from "react";
-import { Auth } from "@/components/Auth";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NavUser } from "@/components/nav-user";
+import { useDropzone } from 'react-dropzone';
+import { FilePlus } from 'lucide-react';
+import { RainbowButton } from "@/components/ui/rainbow-button";
 
 export default function Home() {
   const router = useRouter();
@@ -24,11 +25,22 @@ export default function Home() {
     checkSession()
   }, [supabase.auth])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
+  const onDrop = (acceptedFiles: File[]) => {
+    if (acceptedFiles && acceptedFiles.length > 0) {
+      setFile(acceptedFiles[0]);
     }
   };
+
+  const truncateFileName = (name: string, maxLength: number) => {
+    if (name.length <= maxLength) return name;
+    const extension = name.split('.').pop();
+    return `${name.substring(0, maxLength - (extension?.length || 0) - 3)}...${extension}`;
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'application/epub+zip': ['.epub'], 'application/pdf': ['.pdf'] },
+  });
 
   const handleLoad = () => {
     if (file?.type === "application/epub+zip") {
@@ -41,7 +53,12 @@ export default function Home() {
   if (isAuthenticated === false) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <Auth />
+        <RainbowButton
+          className="hover:scale-105 transition-transform"
+          onClick={() => router.push('/login')}
+        >
+          Get started
+        </RainbowButton>
       </div>
     );
   }
@@ -67,12 +84,18 @@ export default function Home() {
           <li>Highlight text to use AI.</li>
         </ol>
         <div className="w-full max-w-md flex flex-col gap-4">
-          <Input
-            type="file"
-            accept=".epub, .pdf"
-            onChange={handleFileChange}
-            className="border border-gray-300 dark:border-gray-700 p-2 rounded"
-          />
+          <div
+            {...getRootProps()}
+            className={`border-2 border-dashed p-6 rounded-lg text-center cursor-pointer transition-all duration-300 ${
+              isDragActive ? 'border-blue-500 bg-blue-50 scale-95' : 'border-gray-300 dark:border-gray-700'
+            }`}
+          >
+            <input {...getInputProps()} />
+            <FilePlus className="mx-auto mb-2 text-gray-500" size={32} />
+            <p className="text-gray-500">
+              {isDragActive ? 'Drop the files here ...' : (file ? `Selected file: ${truncateFileName(file.name, 20)}` : 'Drag & drop a file here, or click to select files')}
+            </p>
+          </div>
           <Button
             onClick={handleLoad}
             disabled={!file}

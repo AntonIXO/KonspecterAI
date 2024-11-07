@@ -1,6 +1,4 @@
-Use shadcn/ui components and tailwind css. Use animations.
-
-Use lucide icons.
+Use shadcn/ui, MagicUI components and lucide icons. Use tailwind css and it's animations.
 
 Use skeleton for loading states.
 

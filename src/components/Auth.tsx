@@ -25,6 +25,13 @@ export function Auth() {
     setMessage(response || {})
   }
 
+  async function handleTestLogin() {
+    const formData = new FormData();
+    formData.append('email', 'test@devpins.org');
+    formData.append('password', 'test');
+    await handleLogin(formData);
+  }
+
   return (
     <div className="space-y-4 w-[400px]">
       {message.error && (
@@ -90,9 +97,16 @@ export function Auth() {
                   </Button>
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex flex-col space-y-2">
                 <Button type="submit" className="w-full">
                   Login
+                </Button>
+                <Button 
+                  type="button" 
+                  className="w-full mt-2 bg-yellow-500 text-black hover:bg-yellow-600 transition-colors animate-flash"
+                  onClick={handleTestLogin}
+                >
+                  Login with Test Account
                 </Button>
               </CardFooter>
             </form>
