@@ -4,6 +4,7 @@ import * as React from "react"
 import { Bot, ChevronRight, Zap, LucideIcon, ScrollText } from "lucide-react"
 import { useEffect, useState } from 'react'
 import { createClient } from "@/utils/supabase/client";
+import Link from "next/link"
 
 import {
   Collapsible,
@@ -160,11 +161,13 @@ export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps)
     <>
       <Sidebar collapsible="icon" {...props}>
         <SidebarHeader>
-          <div className="h-[52px] px-4 py-2">
-            <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-violet-500 bg-clip-text text-transparent group-data-[state=collapsed]:invisible">
-              KonspecterAI
-            </h1>
-          </div>
+          <Link href="/">
+            <div className="h-[52px] px-4 py-2 cursor-pointer">
+              <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-violet-500 bg-clip-text text-transparent group-data-[state=collapsed]:invisible">
+                KonspecterAI
+              </h1>
+            </div>
+          </Link>
         </SidebarHeader>
         <SidebarContent>
           {/* Big Summarize Button */}
