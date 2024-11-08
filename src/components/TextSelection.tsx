@@ -3,11 +3,8 @@
 import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 
-interface TextSelectionProps {
-  onSummarize: (text: string) => void;
-}
+export function TextSelection({ handleSummarize }: { handleSummarize: (text: string) => void }) {
 
-export function TextSelection({ onSummarize }: TextSelectionProps) {
   const [selection, setSelection] = useState<{
     text: string;
     position: { x: number; y: number } | null;
@@ -52,17 +49,15 @@ export function TextSelection({ onSummarize }: TextSelectionProps) {
       // Add scroll offset to position for mobile
       const scrollY = window.scrollY || window.pageYOffset;
       
-      // Position the button at the top-center of the selection
       setSelection({
         text,
         position: {
           x: rect.left + (rect.width / 2),
-          y: rect.top + scrollY // Add scroll offset
+          y: rect.top + scrollY
         },
       });
     };
 
-    // Listen for both mouse and touch events
     document.addEventListener("mouseup", handleSelection);
     document.addEventListener("touchend", handleSelection);
     
@@ -76,7 +71,7 @@ export function TextSelection({ onSummarize }: TextSelectionProps) {
     return null;
   }
 
-  const handleClick = () => {
+  const handleClick = async () => {
     // Store the text before clearing selection
     const text = selection.text;
     
@@ -86,13 +81,13 @@ export function TextSelection({ onSummarize }: TextSelectionProps) {
     // Reset our selection state
     setSelection({ text: "", position: null });
     
-    // Call the summarize callback with the stored text
-    onSummarize(text);
+    // Call handleSummarize with the selected text
+    await handleSummarize(text);
   };
 
   return (
     <div
-      className="fixed z-50 touch-none" // Add touch-none to prevent touch interference
+      className="fixed z-50 touch-none"
       style={{
         left: selection.position.x,
         top: selection.position.y,

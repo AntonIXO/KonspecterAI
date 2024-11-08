@@ -2,42 +2,18 @@ import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerT
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { useEffect, useState } from "react";
-import { toast } from "sonner"
-import { createClient } from "@/utils/supabase/client";
+import ReactMarkdown from 'react-markdown';
 
 interface SummaryProps {
     text: string;
     open: boolean;
     setOpen: (open: boolean) => void;
+    handleSave: (text: string) => void;
 }
 
-export function Summary({ text, open, setOpen }: SummaryProps) {
+export function Summary({ text, open, setOpen, handleSave }: SummaryProps) {
     const [displayText, setDisplayText] = useState("");
     const [isLoading, setIsLoading] = useState(true);
-    const supabase = createClient()
-    
-    const handleSave = async () => {
-        try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) {
-                toast.error("Please login to save summaries")
-                return
-            }
-
-            const { error } = await supabase.from('summaries').insert({
-                user_id: user.id,
-                content: text,
-                created_at: new Date().toISOString()
-            })
-
-            if (error) throw error
-            toast.success("Summary saved successfully")
-            setOpen(false)
-        } catch (error) {
-            console.error(error)
-            toast.error("Failed to save summary")
-        }
-    }
 
     useEffect(() => {
         if (!text) {
@@ -86,13 +62,15 @@ export function Summary({ text, open, setOpen }: SummaryProps) {
                             <Skeleton className="h-4 w-[75%]" />
                         </div>
                     ) : (
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                            {displayText}
-                        </p>
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <ReactMarkdown>
+                                {displayText}
+                            </ReactMarkdown>
+                        </div>
                     )}
                 </div>
                 <DrawerFooter>
-                    <Button onClick={handleSave}>Save</Button>
+                    <Button onClick={() => handleSave(displayText)}>Save</Button>
                     <DrawerClose asChild>
                         <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
                     </DrawerClose>

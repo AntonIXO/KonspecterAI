@@ -32,6 +32,10 @@ import {
 } from "@/components/ui/sidebar"
 import { NavUser } from "@/components/nav-user"
 import { SummaryDialog } from "@/components/summary-dialog"
+import { TextSelection } from "@/components/TextSelection"
+import { useSummarizer } from "@/hooks/useSummarizer";
+import { Summary } from "./Summary";
+import { toast } from "sonner";
 
 const compressionModes = [
   { title: "Default (1:1)", value: "1:1", icon: Bot },
@@ -81,11 +85,19 @@ const summaryOptions: SummaryOption[] = [
   { title: "Detailed Summary", type: "full" },
 ]
 
-export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps) {
+export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
   const { compressionMode, setCompressionMode } = useSidebar()
   const [summaries, setSummaries] = useState<MenuItem[]>([])
   const [selectedSummary, setSelectedSummary] = useState<MenuItem | null>(null)
   const supabase = createClient()
+  
+  const {
+    summary,
+    summaryOpen,
+    setSummaryOpen,
+    handlePageSummarize,
+    handleSummarize
+  } = useSummarizer();
 
   // Add state to track open sections
   const [openSections, setOpenSections] = useState<string[]>([]);
@@ -122,13 +134,43 @@ export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps)
       
       setSummaries(summaryItems)
     }
-
     fetchSummaries()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
   }, [supabase])
+
+  const handleSave = async (text: string) => {
+    console.log("Saving summary:", text);
+    try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            toast.error("Please login to save summaries")
+            return
+        }
+
+        // Create new summary object
+        const newSummary = {
+            title: text.substring(0, 30) + '...',
+            url: `/summaries/${Date.now()}`, // Temporary ID until we get real one
+            content: text,
+        }
+
+        // Optimistically update UI
+        setSummaries(prev => [newSummary, ...prev])
+        setSummaryOpen(false)
+
+        // Save to database
+        const { error } = await supabase.from('summaries').insert({
+            user_id: user.id,
+            content: text,
+            created_at: new Date().toISOString()
+        })
+
+        if (error) throw error
+        toast.success("Summary saved successfully")
+    } catch (error) {
+        console.error(error)
+        toast.error("Failed to save summary")
+    }
+  }
 
   // Combine base data with dynamic summaries
   const data = {
@@ -183,7 +225,7 @@ export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps)
                     {summaryOptions.map((option) => (
                       <DropdownMenuItem 
                         key={option.type}
-                        onClick={() => onSummarizePage?.(option.type)}
+                        onClick={() => handlePageSummarize(option.type)}
                         className="flex items-center"
                       >
                         <span>{option.title}</span>
@@ -295,6 +337,13 @@ export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps)
         title="Summary"
         content={selectedSummary?.content || ''}
       />
+      <Summary 
+        text={summary} 
+        open={summaryOpen} 
+        setOpen={setSummaryOpen}
+        handleSave={handleSave}
+      />
+      <TextSelection handleSummarize={handleSummarize} />
     </>
   )
 }
