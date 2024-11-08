@@ -1,18 +1,18 @@
 services:
-  ollama:
-    image: ollama/ollama:latest
-    container_name: conspecter_ollama
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              capabilities: [compute, utility]
-    ports: 
-       - "11434:11434"
-    network_mode: "host"
-    volumes:
-       - ./ollama:/root/.ollama
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   container_name: conspecter_ollama
+  #   deploy:
+  #     resources:
+  #       reservations:
+  #         devices:
+  #           - driver: nvidia
+  #             capabilities: [compute, utility]
+  #   ports: 
+  #      - "11434:11434"
+  #   network_mode: "host"
+  #   volumes:
+  #      - ./ollama:/root/.ollama
   frontend:
     image: git.mootfrost.dev/aireader/web-app_frontend:latest
     container_name: conspecter_frontend

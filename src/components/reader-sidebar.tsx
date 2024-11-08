@@ -124,15 +124,6 @@ export function ReaderSidebar({ onSummarizePage, ...props }: ReaderSidebarProps)
     }
 
     fetchSummaries()
-    
-    const channel = supabase
-      .channel('summaries')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'summaries' 
-      }, fetchSummaries)
-      .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
