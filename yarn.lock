@@ -2,6 +2,14 @@
 # yarn lockfile v1
 
 
+"@ai-sdk/google@^0.0.55":
+  version "0.0.55"
+  resolved "https://registry.yarnpkg.com/@ai-sdk/google/-/google-0.0.55.tgz#0b9f929e21e7850d038041d33cc759f137a8b20d"
+  integrity sha512-dvEMS8Ex2H0OeuFBiT4Q1Kfrxi1ckjooy/PazNLjRQ3w9o9VQq4O24eMQGCuW1Z47qgMdXjhDzsH6qD0HOX6Cw==
+  dependencies:
+    "@ai-sdk/provider" "0.0.26"
+    "@ai-sdk/provider-utils" "1.0.22"
+
 "@ai-sdk/provider-utils@1.0.22":
   version "1.0.22"
   resolved "https://registry.yarnpkg.com/@ai-sdk/provider-utils/-/provider-utils-1.0.22.tgz#5397a193587709796d012fc04e2df9903b70852f"

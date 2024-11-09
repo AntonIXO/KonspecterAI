@@ -1,45 +1,45 @@
-name: CI
+# name: CI
 
-on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+# on:
+#   push:
+#     branches: [ main, master ]
+#   pull_request:
+#     branches: [ main, master ]
 
-jobs:
-  # build:
-  #   runs-on: ubuntu-latest
+# jobs:
+#   # build:
+#   #   runs-on: ubuntu-latest
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+#   #   steps:
+#   #     - uses: actions/checkout@v4
       
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '22'
-  #         cache: 'yarn'
+#   #     - name: Setup Node.js
+#   #       uses: actions/setup-node@v4
+#   #       with:
+#   #         node-version: '22'
+#   #         cache: 'yarn'
           
-  #     - name: Install dependencies
-  #       run: yarn install --frozen-lockfile
+#   #     - name: Install dependencies
+#   #       run: yarn install --frozen-lockfile
         
-  #     - name: Lint
-  #       run: yarn lint
+#   #     - name: Lint
+#   #       run: yarn lint
         
-  #     - name: Type check
-  #       run: yarn tsc --noEmit
+#   #     - name: Type check
+#   #       run: yarn tsc --noEmit
         
-  #     - name: Build
-  #       run: yarn build
+#   #     - name: Build
+#   #       run: yarn build
         
-  #     - name: Cache build output
-  #       uses: actions/cache@v3
-  #       with:
-  #         path: |
-  #           .next
-  #           node_modules
-  #         key: ${{ runner.os }}-nextjs-${{ hashFiles('**/yarn.lock') }}
-  #         restore-keys: |
-  #           ${{ runner.os }}-nextjs-
+#   #     - name: Cache build output
+#   #       uses: actions/cache@v3
+#   #       with:
+#   #         path: |
+#   #           .next
+#   #           node_modules
+#   #         key: ${{ runner.os }}-nextjs-${{ hashFiles('**/yarn.lock') }}
+#   #         restore-keys: |
+#   #           ${{ runner.os }}-nextjs-
 
   deploy:
     runs-on: ubuntu-latest
@@ -60,7 +60,7 @@ jobs:
             # Create/update .env file with secrets
             echo "NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" > .env.local
             echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" >> .env.local
-            echo "NEXT_PUBLIC_OLLAMA_BASE_URL=${{ secrets.OLLAMA_BASE_URL }}" >> .env.local
+            echo "GOOGLE_GENERATIVE_AI_API_KEY=${{ secrets.GOOGLE_GENERATIVE_AI_API_KEY }}" >> .env.local
             
             yarn install --frozen-lockfile
             yarn build

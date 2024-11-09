@@ -33,7 +33,6 @@ import {
 import { NavUser } from "@/components/nav-user"
 import { SummaryDialog } from "@/components/summary-dialog"
 import { TextSelection } from "@/components/TextSelection"
-import { useSummarizer } from "@/hooks/useSummarizer";
 import { Summary } from "./Summary";
 import { toast } from "sonner";
 
@@ -91,13 +90,9 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
   const [selectedSummary, setSelectedSummary] = useState<MenuItem | null>(null)
   const supabase = createClient()
   
-  const {
-    summary,
-    summaryOpen,
-    setSummaryOpen,
-    handlePageSummarize,
-    handleSummarize
-  } = useSummarizer();
+  const [summary, setSummary] = useState("")
+  const [summaryOpen, setSummaryOpen] = useState(false)
+  const [summaryType, setSummaryType] = useState<'short' | 'full'>('short')
 
   // Add state to track open sections
   const [openSections, setOpenSections] = useState<string[]>([]);
@@ -138,7 +133,6 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
   }, [supabase])
 
   const handleSave = async (text: string) => {
-    console.log("Saving summary:", text);
     try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
@@ -215,6 +209,20 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
   // Add handler for summary click
   const handleSummaryClick = (summary: MenuItem) => {
     setSelectedSummary(summary)
+  }
+
+  const handlePageSummarize = (type: 'short' | 'full') => {
+    setSummaryType(type)
+    const page = document.querySelector('.react-pdf__Page');
+    const textContent = page?.textContent;
+    setSummary(textContent || '')
+    setSummaryOpen(true)
+  }
+
+  const handleSummarize = (text: string) => {
+    setSummary(text)
+    setSummaryType('short')
+    setSummaryOpen(true)
   }
 
   return (
@@ -373,6 +381,7 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
         open={summaryOpen} 
         setOpen={setSummaryOpen}
         handleSave={handleSave}
+        type={summaryType}
       />
       <TextSelection handleSummarize={handleSummarize} />
     </>
