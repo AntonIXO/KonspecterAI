@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Bot, ChevronRight, Zap, LucideIcon, ScrollText } from "lucide-react"
+import { Bot, ChevronRight, Zap, LucideIcon, ScrollText, X } from "lucide-react"
 import { useEffect, useState } from 'react'
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link"
@@ -172,6 +172,33 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
     }
   }
 
+  const handleDeleteSummary = async (summaryUrl: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent triggering the summary click
+    try {
+      const summaryId = summaryUrl.split('/').pop()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        toast.error("Please login to delete summaries")
+        return
+      }
+
+      // Optimistically update UI
+      setSummaries(prev => prev.filter(s => s.url !== summaryUrl))
+
+      // Delete from database
+      const { error } = await supabase
+        .from('summaries')
+        .delete()
+        .eq('id', summaryId)
+
+      if (error) throw error
+      toast.success("Summary deleted successfully")
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to delete summary")
+    }
+  }
+
   // Combine base data with dynamic summaries
   const data = {
     aiFeatures: baseData.aiFeatures.map(section => {
@@ -268,7 +295,7 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
                           <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton
                               onClick={() => handleSummaryClick(item)}
-                              className="cursor-pointer"
+                              className="cursor-pointer group relative"
                               tooltip={item.title}
                             >
                               {item.icon && typeof item.icon === 'string' ? (
@@ -277,6 +304,10 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
                                 <item.icon className="mr-2 h-4 w-4" />
                               ) : null}
                               <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                              <X 
+                                className="absolute right-2 top-1/2 -translate-y-1/2 h-2 w-2 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                                onClick={(e) => handleDeleteSummary(item.url, e)}
+                              />
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         ))}
