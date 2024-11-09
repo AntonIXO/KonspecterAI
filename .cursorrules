@@ -1,4 +1,6 @@
-Use shadcn/ui, MagicUI components and lucide icons. Use tailwind css and it's animations. Adopt for dark mode.
+Use shadcn/ui, MagicUI components and lucide icons. Use tailwind css and it's animations. Adopt for dark mode with next-themes.
+
+Adopt for mobile.
 
 Use skeleton for loading states.
 

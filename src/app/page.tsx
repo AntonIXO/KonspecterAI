@@ -9,11 +9,14 @@ import { NavUser } from "@/components/nav-user";
 import { useDropzone } from 'react-dropzone';
 import { FilePlus } from 'lucide-react';
 import { RainbowButton } from "@/components/ui/rainbow-button";
+import { useTheme } from "next-themes";
 
 export default function Home() {
   const router = useRouter();
   const { file, setFile } = useFile();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   
   const supabase = createClient()
   
@@ -87,18 +90,29 @@ export default function Home() {
           <div
             {...getRootProps()}
             className={`border-2 border-dashed p-6 rounded-lg text-center cursor-pointer transition-all duration-300 ${
-              isDragActive ? 'border-blue-500 bg-blue-50 scale-95' : 'border-gray-300 dark:border-gray-700'
+              isDragActive 
+                ? isDark 
+                  ? 'border-blue-500 bg-blue-950/50 scale-95' 
+                  : 'border-blue-500 bg-blue-50 scale-95'
+                : 'border-gray-300 dark:border-gray-700 hover:border-gray-400 dark:hover:border-gray-600'
             }`}
           >
             <input {...getInputProps()} />
-            <FilePlus className="mx-auto mb-2 text-gray-500" size={32} />
-            <p className="text-gray-500">
-              {isDragActive ? 'Drop the files here ...' : (file ? `Selected file: ${truncateFileName(file.name, 20)}` : 'Drag & drop a file here, or click to select files')}
+            <FilePlus className="mx-auto mb-2 text-gray-500 dark:text-gray-400" size={32} />
+            <p className="text-gray-500 dark:text-gray-400">
+              {isDragActive 
+                ? 'Drop the files here ...' 
+                : (file 
+                  ? `Selected file: ${truncateFileName(file.name, 20)}` 
+                  : 'Drag & drop a file here, or click to select files'
+                )
+              }
             </p>
           </div>
           <Button
             onClick={handleLoad}
             disabled={!file}
+            className="w-full"
           >
             Load File
           </Button>

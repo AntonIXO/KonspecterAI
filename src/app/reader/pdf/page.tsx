@@ -124,7 +124,7 @@ export default function PDFReader() {
                   />
                 </Document>
 
-                <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-2 sm:p-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+                <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-950 border-t dark:border-gray-800 p-2 sm:p-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
                   <Button
                     onClick={goToPrevPage}
                     disabled={currentPage <= 1}
@@ -134,7 +134,7 @@ export default function PDFReader() {
                     Previous
                   </Button>
                   
-                  <div className="flex items-center gap-2 text-sm sm:text-base">
+                  <div className="flex items-center gap-2 text-sm sm:text-base dark:text-gray-200">
                     <span>Page <input
                       type="number"
                       min={1}
@@ -161,7 +161,7 @@ export default function PDFReader() {
                           setInputValue(String(currentPage));
                         }
                       }}
-                      className="w-12 sm:w-16 px-2 py-1 border rounded text-center"
+                      className="w-12 sm:w-16 px-2 py-1 border dark:border-gray-700 rounded text-center bg-white dark:bg-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50"
                     /> of {numPages}</span>
                   </div>
 

@@ -6,6 +6,8 @@ import { SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import Script from 'next/script';
 import { InstallPWA } from '@/components/InstallPWA';
+import { ThemeProvider } from "@/components/theme-provider";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -37,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
         <meta name="mobile-web-app-capable" content="yes" />
@@ -47,17 +49,27 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <SidebarProvider>
-          <FileProvider>
-            <main className="flex-1">
-              <div className="container mx-auto">
-                {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <SidebarProvider>
+            <FileProvider>
+              <main className="flex-1">
+                <div className="container mx-auto">
+                  {children}
+                </div>
+              </main>
+              <div className="fixed bottom-4 right-4 flex gap-2">
+                <ThemeToggle />
+                <InstallPWA />
               </div>
-            </main>
-            <InstallPWA />
-            <Toaster />
-          </FileProvider>
-        </SidebarProvider>
+              <Toaster />
+            </FileProvider>
+          </SidebarProvider>
+        </ThemeProvider>
         <Script
           id="register-sw"
           strategy="lazyOnload"
