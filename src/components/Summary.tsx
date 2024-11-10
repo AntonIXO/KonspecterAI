@@ -1,12 +1,12 @@
-import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "./ui/button";
+import { Skeleton } from "./ui/skeleton";
 import { useChat } from 'ai/react';
 import ReactMarkdown from 'react-markdown';
 import { MessageSquare, Save, X } from "lucide-react";
 import { Input } from "./ui/input";
 import { Send } from "lucide-react";
-import { useEffect, useRef } from 'react';
-import { Skeleton } from "./ui/skeleton";
+import { useEffect, useRef, useCallback } from 'react';
 
 interface SummaryProps {
     text: string;
@@ -28,12 +28,9 @@ Text to summarize: `
 };
 
 export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps) {
-    const { messages, input, handleInputChange, handleSubmit, isLoading, append, setMessages } = useChat({
+    const { messages, input, handleInputChange, handleSubmit, isLoading, append, setMessages, stop } = useChat({
         api: '/api/summarize',
         id: 'summary-chat',
-        onFinish: () => {
-            scrollToBottom();
-        },
     });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -41,6 +38,10 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
 
     useEffect(() => {
         if (open && text && messages.length === 0) {
@@ -60,12 +61,12 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
         }
     }, [open, text, append, messages.length]);
 
-    useEffect(() => {
-        if (!open) {
-            setMessages([]);
-        }
-    }, [open, setMessages]);
-    
+    const handleClose = useCallback(() => {
+        stop(); // Cancel any ongoing requests
+        setMessages([]); // Clear messages
+        setOpen(false); // Close the drawer
+    }, [stop, setMessages, setOpen]);
+
     const getAllAnswers = () => {
         return messages
             .filter(message => message.role === 'assistant')
@@ -74,7 +75,7 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
     };
 
     return (
-        <Drawer open={open}>
+        <Drawer open={open} onOpenChange={handleClose}>
             <DrawerContent className="max-h-[90vh] flex flex-col">
                 <DrawerHeader>
                     <DrawerTitle className="flex items-center gap-2">
@@ -101,18 +102,18 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
                                     }`}
                                 >
                                     <div className="prose prose-sm dark:prose-invert">
-                                        {message.content.length < 0 ? (
-                                            <div className="space-y-2">
-                                                <Skeleton className="h-4 w-[90%]" />
-                                                <Skeleton className="h-4 w-[80%]" />
-                                            </div>
-                                        ) : (
-                                            <ReactMarkdown>{message.content}</ReactMarkdown>
-                                        )}
+                                        <ReactMarkdown>{message.content}</ReactMarkdown>
                                     </div>
                                 </div>
                             </div>
                         ))}
+                    
+                    {isLoading && (
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-[30%]" />
+                            <Skeleton className="h-4 w-[40%]" />
+                        </div>
+                    )}
                     
                     <div ref={messagesEndRef} />
                 </div>
@@ -141,16 +142,14 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
                         <Save className="w-4 h-4" />
                         Save
                     </Button>
-                    <DrawerClose asChild>
-                        <Button 
-                            variant="outline" 
-                            onClick={() => setOpen(false)}
-                            className="flex items-center gap-2"
-                        >
-                            <X className="w-4 h-4" />
-                            Close
-                        </Button>
-                    </DrawerClose>
+                    <Button 
+                        variant="outline" 
+                        onClick={handleClose}
+                        className="flex items-center gap-2"
+                    >
+                        <X className="w-4 h-4" />
+                        Close
+                    </Button>
                 </DrawerFooter>
             </DrawerContent>
         </Drawer>
