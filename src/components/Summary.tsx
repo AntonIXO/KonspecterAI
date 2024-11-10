@@ -1,12 +1,12 @@
 import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { Button } from "./ui/button";
-import { Skeleton } from "./ui/skeleton";
 import { useChat } from 'ai/react';
 import ReactMarkdown from 'react-markdown';
 import { MessageSquare, Save, X } from "lucide-react";
 import { Input } from "./ui/input";
 import { Send } from "lucide-react";
 import { useEffect, useRef } from 'react';
+import { Skeleton } from "./ui/skeleton";
 
 interface SummaryProps {
     text: string;
@@ -31,6 +31,9 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
     const { messages, input, handleInputChange, handleSubmit, isLoading, append, setMessages } = useChat({
         api: '/api/summarize',
         id: 'summary-chat',
+        onFinish: () => {
+            scrollToBottom();
+        },
     });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -38,10 +41,6 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
 
     useEffect(() => {
         if (open && text && messages.length === 0) {
@@ -58,7 +57,6 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
                 }
             };
             generateSummary();
-            console.log('Generating summary...')
         }
     }, [open, text, append, messages.length]);
 
@@ -103,18 +101,18 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
                                     }`}
                                 >
                                     <div className="prose prose-sm dark:prose-invert">
-                                        <ReactMarkdown>{message.content}</ReactMarkdown>
+                                        {message.content.length < 0 ? (
+                                            <div className="space-y-2">
+                                                <Skeleton className="h-4 w-[90%]" />
+                                                <Skeleton className="h-4 w-[80%]" />
+                                            </div>
+                                        ) : (
+                                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         ))}
-                    
-                    {isLoading && (
-                        <div className="space-y-2">
-                            <Skeleton className="h-4 w-[90%]" />
-                            <Skeleton className="h-4 w-[80%]" />
-                        </div>
-                    )}
                     
                     <div ref={messagesEndRef} />
                 </div>
