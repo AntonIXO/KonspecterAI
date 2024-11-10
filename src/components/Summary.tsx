@@ -22,9 +22,9 @@ const SUMMARY_PROMPTS = {
 1. Brief overview (2-3 sentences)
 2. Key points and findings (using bullet points)
 3. Technical concepts explained (if present)
-4. Practical implications
-5. Important terminology defined
-6. Structured with clear markdown headings Text to summarize: `
+4. Practical implications (if any)
+5. Important terminology defined (if any)
+Text to summarize: `
 };
 
 export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps) {
