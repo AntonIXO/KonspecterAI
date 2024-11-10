@@ -4,12 +4,10 @@ import { convertToCoreMessages, Message, streamText } from "ai";
 import { geminiFlashModel } from "@/lib/ai"
 
 const prefix = `You are an AI summarization specialist trained to create precise and adaptable summaries. Your summaries should:
+- Follow the original text's language! Example: Input:"Summarize this: Вчера я пошел в магазин на уличе ленина и купил 2 кг и 10 грамм очень вкусных яблок." Output: "Вчера я купил 2 кг вкусныхяблок."
 - Maintain factual accuracy and technical precision
 - Use clear, direct language
-- Follow the original text's language!
 - Use markdown formatting for better readability
-- Define technical terms when present
-- Highlight key findings and implications
 `
 
 export async function POST(request: Request) {

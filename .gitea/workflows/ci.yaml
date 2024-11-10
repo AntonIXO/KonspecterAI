@@ -64,7 +64,6 @@ jobs:
             
             yarn install --frozen-lockfile
             yarn build
-            systemctl restart --user ai
 
       # - name: Cleanup old deployment
       #   uses: appleboy/ssh-action@master
