@@ -12,6 +12,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ReaderSidebar } from "@/components/reader-sidebar";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
+import { ChevronLeft } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -95,7 +98,7 @@ export default function PDFReader() {
   return (
     <div className="relative min-h-screen">
       <div className={cn(
-        "min-h-screen p-4 flex flex-col items-center transition-[margin] duration-200 ease-linear",
+        "min-h-screen p-4 pb-24 sm:pb-28 flex flex-col items-center transition-[margin] duration-200 ease-linear",
         "md:ml-0 md:data-[sidebar-state=expanded]:ml-48"
       )} data-sidebar-state={state}>
         <div className="w-full max-w-6xl">
@@ -123,61 +126,67 @@ export default function PDFReader() {
                     renderAnnotationLayer={true}
                   />
                 </Document>
-
-                <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-950 border-t dark:border-gray-800 p-2 sm:p-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
-                  <Button
-                    onClick={goToPrevPage}
-                    disabled={currentPage <= 1}
-                    variant="outline"
-                    className="w-full sm:w-auto"
-                  >
-                    Previous
-                  </Button>
-                  
-                  <div className="flex items-center gap-2 text-sm sm:text-base dark:text-gray-200">
-                    <span>Page <input
-                      type="number"
-                      min={1}
-                      max={numPages || 1}
-                      value={inputValue}
-                      onChange={(e) => {
-                        setInputValue(e.target.value);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          const newPage = parseInt(inputValue);
-                          if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
-                            setCurrentPage(newPage);
-                          } else {
-                            setInputValue(String(currentPage));
-                          }
-                        }
-                      }}
-                      onBlur={() => {
-                        const newPage = parseInt(inputValue);
-                        if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
-                          setCurrentPage(newPage);
-                        } else {
-                          setInputValue(String(currentPage));
-                        }
-                      }}
-                      className="w-12 sm:w-16 px-2 py-1 border dark:border-gray-700 rounded text-center bg-white dark:bg-gray-900 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/50 dark:focus:ring-primary/50"
-                    /> of {numPages}</span>
-                  </div>
-
-                  <Button
-                    onClick={goToNextPage}
-                    disabled={currentPage >= (numPages || 1)}
-                    variant="outline"
-                    className="w-full sm:w-auto"
-                  >
-                    Next
-                  </Button>
-                </div>
               </div>
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-950 border-t dark:border-gray-800 p-2 sm:p-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 shadow-lg">
+        <Button
+          onClick={goToPrevPage}
+          disabled={currentPage <= 1}
+          variant="outline"
+          className="w-full sm:w-auto"
+        >
+          <ChevronLeft className="w-4 h-4 mr-2" />
+          Previous
+        </Button>
+        
+        <div className="flex items-center gap-2 text-sm sm:text-base dark:text-gray-200">
+          <span className="flex items-center gap-2">
+            Page 
+            <Input
+              type="number"
+              min={1}
+              max={numPages || 1}
+              value={inputValue}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  const newPage = parseInt(inputValue);
+                  if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
+                    setCurrentPage(newPage);
+                  } else {
+                    setInputValue(String(currentPage));
+                  }
+                }
+              }}
+              onBlur={() => {
+                const newPage = parseInt(inputValue);
+                if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
+                  setCurrentPage(newPage);
+                } else {
+                  setInputValue(String(currentPage));
+                }
+              }}
+              className="w-16 sm:w-20 text-center"
+            />
+            of {numPages}
+          </span>
+        </div>
+
+        <Button
+          onClick={goToNextPage}
+          disabled={currentPage >= (numPages || 1)}
+          variant="outline"
+          className="w-full sm:w-auto"
+        >
+          Next
+          <ChevronRight className="w-4 h-4 ml-2" />
+        </Button>
       </div>
       <ReaderSidebar variant="floating"/>
     </div>
