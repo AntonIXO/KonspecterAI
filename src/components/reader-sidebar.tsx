@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Bot, ChevronRight, Zap, LucideIcon, ScrollText, X } from "lucide-react"
+import { ChevronRight, Zap, LucideIcon, ScrollText, X } from "lucide-react"
 import { useEffect, useState } from 'react'
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link"
@@ -36,11 +36,11 @@ import { TextSelection } from "@/components/TextSelection"
 import { Summary } from "./Summary";
 import { toast } from "sonner";
 
-const compressionModes = [
-  { title: "Default (1:1)", value: "1:1", icon: Bot },
-  { title: "Compression (1:2)", value: "1:2", icon: Zap },
-  { title: "SuperCompression (1:3)", value: "1:3", icon: "⚡⚡" },
-] as const
+// const compressionModes = [
+//   { title: "Default (1:1)", value: "1:1", icon: Bot },
+//   { title: "Compression (1:2)", value: "1:2", icon: Zap },
+//   { title: "SuperCompression (1:3)", value: "1:3", icon: "⚡⚡" },
+// ] as const
 
 // Add proper type definitions
 type MenuItem = {
@@ -80,12 +80,12 @@ type SummaryOption = {
 
 // Add summary options
 const summaryOptions: SummaryOption[] = [
-  { title: "Quick Summary", type: "short" },
-  { title: "Detailed Summary", type: "full" },
+  { title: "Quick chat", type: "short" },
+  { title: "Detailed chat", type: "full" },
 ]
 
 export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
-  const { compressionMode, setCompressionMode } = useSidebar()
+  // const { compressionMode, setCompressionMode } = useSidebar()
   const [summaries, setSummaries] = useState<MenuItem[]>([])
   const [selectedSummary, setSelectedSummary] = useState<MenuItem | null>(null)
   const supabase = createClient()
@@ -249,7 +249,7 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
                       tooltip="Summarize Page"
                     >
                       <Zap />
-                      <span className="group-data-[collapsible=icon]:hidden">Summarize Page</span>
+                      <span className="group-data-[collapsible=icon]:hidden">Chat with PDF</span>
                       <ChevronRight className="ml-auto group-data-[collapsible=icon]:hidden" />
                     </SidebarMenuButton>
                   </DropdownMenuTrigger>
@@ -326,7 +326,7 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
               ))}
             </SidebarMenu>
             <SidebarMenu>
-            <SidebarMenuItem>
+            {/* <SidebarMenuItem>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <SidebarMenuButton tooltip="Compression Mode">
@@ -360,7 +360,7 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
-            </SidebarMenuItem>
+            </SidebarMenuItem> */}
           </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
