@@ -7,7 +7,7 @@ import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
 
 const prefix = `You are an AI summarization specialist trained to create precise and adaptable summaries. Your summaries should:
-- Follow the original text's language! If input text is in Russian, answer should be in Russian. Example: Input:"Summarize this: Вчера я пошел в магазин на уличе ленина и купил 2 кг и 10 грамм очень вкусных яблок." Output: "Вчера я купил 2 кг вкусныхяблок."
+- Follow the original text's language! If input text is in Russian, answer should be in Russian. Example: Input:"Summarize this: Вчера я пошел в магазин на улицу Ленина и купил 2 кг и 10 грамм очень вкусных яблок." Output: "Вчера я купил 2 кг вкусных яблок."
 - Maintain factual accuracy and technical precision
 - Use clear, direct language
 - Use markdown formatting for better readability
@@ -33,13 +33,13 @@ export async function POST(request: Request) {
       functionId: "summarize-text",
     },
     tools: {
-      addResource: tool({
-        description: `add a resource to your knowledge base.
-          If the user provides a random piece of knowledge unprompted, use this tool without asking for confirmation.`,
+      getInfo: tool({
+        description: `get information about document and question.
+          If the user provides or asks a random piece of knowledge unprompted, use this tool without asking for confirmation.`,
         parameters: z.object({
           content: z
             .string()
-            .describe('the content or resource to add to the knowledge base'),
+            .describe('the content to use in answer!'),
         }),
         execute: async ({ content }) => createResource({ content }),
       }),
@@ -51,7 +51,6 @@ export async function POST(request: Request) {
 
 async function createResource({ content }: { content: string }) {
   const supabase = await createClient();
-  console.log("content", content)
   const { data, error } = await supabase.functions.invoke('search', {
     body: { search: content }
   });
@@ -64,12 +63,9 @@ async function createResource({ content }: { content: string }) {
       error: error.message
     };
   }
-
-  // Make sure to return a result even if data is empty
-  console.log("data", data)
   return {
     success: true,
     message: 'Resource added successfully',
-    data: data?.result || null
+    data: data?.result.text?.substring(0, 700) || null
   };
 }
