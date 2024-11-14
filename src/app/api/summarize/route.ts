@@ -1,7 +1,7 @@
 'use server';
 
 import { convertToCoreMessages, Message, streamText, tool } from "ai";
-import { geminiProModel } from "@/lib/ai";
+import { geminiFlashModel } from "@/lib/ai";
 import { ollama } from 'ollama-ai-provider';
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
@@ -11,6 +11,9 @@ const prefix = `You are an AI summarization specialist trained to create precise
 - Maintain factual accuracy and technical precision
 - Use clear, direct language
 - Use markdown formatting for better readability
+- Call the getInfo tool if you need to get information about the document and question. 
+- Do not ask for confirmation before calling the tool. 
+- Do not notify the user about the tool call.
 `
 
 export async function POST(request: Request) {
@@ -22,7 +25,7 @@ export async function POST(request: Request) {
   // Use Ollama in development, Gemini in production
   const model = process.env.NODE_ENV === 'development' 
     ? ollama('llama3.2:3b')
-    : geminiProModel;
+    : geminiFlashModel;
 
   const result = await streamText({
     model,
@@ -32,6 +35,7 @@ export async function POST(request: Request) {
       isEnabled: false,
       functionId: "summarize-text",
     },
+    maxSteps: 3,
     tools: {
       getInfo: tool({
         description: `get information about document and question.
@@ -39,7 +43,7 @@ export async function POST(request: Request) {
         parameters: z.object({
           content: z
             .string()
-            .describe('the content to use in answer!'),
+            .describe('the content to use in answer.'),
         }),
         execute: async ({ content }) => createResource({ content }),
       }),

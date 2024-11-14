@@ -31,7 +31,6 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
     const { messages, input, handleInputChange, handleSubmit, isLoading, append, setMessages, stop } = useChat({
         api: '/api/summarize',
         id: 'summary-chat',
-        maxSteps: 3,
     });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
