@@ -40,7 +40,6 @@ export async function deleteBook(userId: string, fileName: string) {
   const { error } = await supabase.storage
     .from('books')
     .remove([`${userId}/${fileName}`])
-
   
   await supabase
     .from('books')

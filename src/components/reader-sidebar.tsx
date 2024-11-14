@@ -254,7 +254,8 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
                     </SidebarMenuButton>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
-                    side="right"
+                    side="bottom"
+                    align="start"
                     className="w-[--radix-popper-anchor-width]"
                   >
                     {summaryOptions.map((option) => (

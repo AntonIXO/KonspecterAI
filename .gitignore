@@ -45,3 +45,5 @@ ollama/
 .env.local
 .env.production
 certificates
+
+supabase/.temp

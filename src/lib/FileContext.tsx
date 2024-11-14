@@ -5,15 +5,18 @@ import { createContext, useContext, useEffect, useState } from 'react';
 interface FileContextType {
   file: File | null;
   setFile: (file: File | null) => void;
+  filename: string | null;
 }
 
 const FileContext = createContext<FileContextType>({
   file: null,
   setFile: () => {},
+  filename: null,
 });
 
 export function FileProvider({ children }: { children: React.ReactNode }) {
   const [file, setFile] = useState<File | null>(null);
+  const [filename, setFilename] = useState<string | null>(null);
 
   // Load file from localStorage on mount
   useEffect(() => {
@@ -29,12 +32,14 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
       }
       const recoveredFile = new File([buffer], name, { type });
       setFile(recoveredFile);
+      setFilename(name);
     }
   }, []);
 
   // Save file to localStorage when it changes
   const handleSetFile = (newFile: File | null) => {
     setFile(newFile);
+    setFilename(newFile?.name || null);
     if (newFile) {
       // Convert File to base64 and save
       const reader = new FileReader();
@@ -73,7 +78,7 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <FileContext.Provider value={{ file, setFile: handleSetFile }}>
+    <FileContext.Provider value={{ file, setFile: handleSetFile, filename }}>
       {children}
     </FileContext.Provider>
   );

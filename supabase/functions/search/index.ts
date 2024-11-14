@@ -16,8 +16,8 @@ const supabase = createClient<Database>(
 const model = new Supabase.ai.Session("gte-small");
 
 Deno.serve(async (req) => {
-  const { search } = await req.json();
-  if (!search) return new Response("Please provide a search param!");
+  const { search, user_id, path } = await req.json();
+  if (!search || !user_id || !path) return new Response("Please provide a search param!");
   // Generate embedding for search term.
   const embedding = await model.run(search, {
     mean_pool: true,
@@ -29,6 +29,8 @@ Deno.serve(async (req) => {
     .rpc("query_books", {
       embedding: JSON.stringify(embedding),
       match_threshold: 0.8,
+      user_id: user_id,
+      path: path,
     })
     .select("text")
     .limit(3);
@@ -38,16 +40,3 @@ Deno.serve(async (req) => {
 
   return Response.json({ search, result });
 });
-
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/search' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"name":"Functions"}'
-
-*/

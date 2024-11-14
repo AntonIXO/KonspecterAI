@@ -96,9 +96,9 @@ export default function PDFReader() {
   }, []);
 
   return (
-    <div className="relative min-h-screen">
+    <div className="relative min-h-screen pb-[120px] sm:pb-[72px]">
       <div className={cn(
-        "min-h-screen p-4 pb-24 sm:pb-28 flex flex-col items-center transition-[margin] duration-200 ease-linear",
+        "min-h-screen p-4 flex flex-col items-center transition-[margin] duration-200 ease-linear",
         "md:ml-0 md:data-[sidebar-state=expanded]:ml-48"
       )} data-sidebar-state={state}>
         <div className="w-full max-w-6xl">
@@ -144,7 +144,7 @@ export default function PDFReader() {
         </Button>
         
         <div className="flex items-center gap-2 text-sm sm:text-base dark:text-gray-200">
-          <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2 whitespace-nowrap">
             Page 
             <Input
               type="number"

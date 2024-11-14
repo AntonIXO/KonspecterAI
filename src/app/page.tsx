@@ -14,6 +14,7 @@ import { User } from "@supabase/supabase-js";
 import { toast } from 'sonner';
 import { pdfjs } from "react-pdf";
 import { FileObject } from "@supabase/storage-js";
+import { Progress } from "@/components/ui/progress";
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
@@ -58,55 +59,98 @@ export default function Home() {
     accept: { 'application/epub+zip': ['.epub'], 'application/pdf': ['.pdf'] },
   });
 
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
+  const [indexingProgress, setIndexingProgress] = useState({ 
+    current: 0, 
+    total: 0 
+  });
+
   const handleUpload = async () => {
     if (!file || !user) return
+    
+    setIsUploading(true);
+    setUploadProgress(0);
+    setIndexingProgress({ current: 0, total: 0 });
     
     try {
       // Upload file to storage
       const updatedBooks = await uploadFile(file, user.id)
+      setUploadProgress(30);
       
       // Generate embeddings for text content
       if (file.type === 'application/pdf') {
-        // For PDF files
         const pdfjs = await import('pdfjs-dist');
         const pdf = await pdfjs.getDocument(URL.createObjectURL(file)).promise;
-        let fullText = '';
+        const paragraphs: string[] = [];
         
+        // Extract paragraphs from PDF
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const pageText = textContent.items.map((item: any) => item.str).join(' ');// eslint-disable-next-line @typescript-eslint/no-explicit-any
-          fullText += pageText + ' ';
+          const pageText = textContent.items.map((item: any) => item.str).join(' ');
+          
+          const pageParagraphs = pageText
+            .split(/\n\s*\n/)
+            .map(p => p.trim())
+            .filter(p => p.length > 0);
+          
+          paragraphs.push(...pageParagraphs);
         }
 
-        // Get embedding from Edge Function
-        const { data: { embedding } } = await supabase.functions.invoke('embed', {
-          body: { input: fullText }
-        })
+        setUploadProgress(50);
+        setIndexingProgress({ current: 0, total: paragraphs.length });
 
-        // Insert into books table with correct structure
-        const { error } = await supabase
-          .from('books')
-          .insert([{
-            user_id: user.id,
-            path: file.name,
-            text: fullText,
-            embedding: embedding
-          }])
-          .select()
+        // Process paragraphs in batches with a delay between calls
+        const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        
+        const BATCH_SIZE = 15; // Process 5 paragraphs concurrently
+        const DELAY_MS = 20;  // Delay between batches
 
-        if (error) throw error;
+        // Helper function to process paragraphs in batches
+        const processParagraphsBatch = async (paragraphs: string[], file: File) => {
+          for (let i = 0; i < paragraphs.length; i += BATCH_SIZE) {
+            const batch = paragraphs.slice(i, i + BATCH_SIZE);
+            
+            // Process batch concurrently
+            await Promise.all(batch.map(async (paragraph) => {
+              try {
+                const { error } = await supabase.functions.invoke('embed', {
+                  body: { text: paragraph, path: file.name }
+                });
+                
+                if (error) throw error;
+                
+                // Update progress
+                setIndexingProgress(prev => ({ ...prev, current: prev.current + 1 }));
+                setUploadProgress(50 + Math.floor(((i + batch.length) / paragraphs.length) * 50));
+              } catch (error) {
+                console.error('Error processing paragraph:', error);
+              }
+            }));
+            
+            // Add delay between batches to prevent rate limiting
+            await delay(DELAY_MS);
+          }
+        };
+
+        // Replace the existing for loop with this call
+        await processParagraphsBatch(paragraphs, file);
       }
 
       if (updatedBooks) {
         setBooks(updatedBooks)
         setFile(null)
+        setUploadProgress(100);
         toast.success('File uploaded and indexed successfully')
       }
     } catch (error) {
       console.error('Error uploading and processing file:', error)
       toast.error('Error uploading file')
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+      setIndexingProgress({ current: 0, total: 0 });
     }
   };
 
@@ -188,7 +232,11 @@ export default function Home() {
               }`}
             >
               <input {...getInputProps()} />
-              <FilePlus className="mx-auto mb-2 text-gray-500 dark:text-gray-400" size={32} />
+              {isUploading ? (
+                <Loader2 className="mx-auto mb-2 text-gray-500 dark:text-gray-400 animate-spin" size={32} />
+              ) : (
+                <FilePlus className="mx-auto mb-2 text-gray-500 dark:text-gray-400" size={32} />
+              )}
               <p className="text-gray-500 dark:text-gray-400 text-sm">
                 {isDragActive 
                   ? 'Drop the files here ...' 
@@ -198,13 +246,33 @@ export default function Home() {
                   )
                 }
               </p>
+              {isUploading && (
+                <div className="mt-4">
+                  <Progress value={uploadProgress} className="h-1" />
+                  <div className="flex flex-col gap-0.5 mt-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {uploadProgress < 30 ? 'Uploading file...' :
+                       uploadProgress < 50 ? 'Parsing PDF...' :
+                       uploadProgress < 100 ? 'Indexing content...' : 'Complete!'}
+                    </p>
+                    {indexingProgress.total > 0 && uploadProgress >= 50 && uploadProgress < 100 && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Indexed {indexingProgress.current} of {indexingProgress.total} paragraphs
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
             <Button
               onClick={handleUpload}
-              disabled={!file}
+              disabled={!file || isUploading}
               className="w-full"
             >
-              Upload File
+              {isUploading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {isUploading ? 'Uploading...' : 'Upload File'}
             </Button>
           </div>
 
