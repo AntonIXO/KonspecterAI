@@ -11,9 +11,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useState } from 'react'
 import type { AuthResponse } from '@/app/login/actions'
 import { KeySquare } from "lucide-react"
+import { GoogleButton } from "@/components/ui/google-button"
+import { createClient } from '@/utils/supabase/client'
 
 export function Auth() {
   const [message, setMessage] = useState<AuthResponse>({})
+
+  const supabase = createClient()
 
   async function handleLogin(formData: FormData) {
     const response = await login(formData)
@@ -30,6 +34,19 @@ export function Auth() {
     formData.append('email', 'test@devpins.org');
     formData.append('password', 'test');
     await handleLogin(formData);
+  }
+
+  async function handleGoogleLogin() {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`
+      }
+    })
+
+    if (error) {
+      setMessage({ error: error.message })
+    }
   }
 
   return (
@@ -64,6 +81,17 @@ export function Auth() {
             </CardHeader>
             <form action={handleLogin}>
               <CardContent className="space-y-4">
+                <GoogleButton onClick={handleGoogleLogin} />
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or continue with
+                    </span>
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <Input

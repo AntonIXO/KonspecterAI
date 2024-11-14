@@ -105,7 +105,7 @@ export default function Home() {
         // Process paragraphs in batches with a delay between calls
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
         
-        const BATCH_SIZE = 15; // Process 5 paragraphs concurrently
+        const BATCH_SIZE = 10; // Process 5 paragraphs concurrently
         const DELAY_MS = 20;  // Delay between batches
 
         // Helper function to process paragraphs in batches

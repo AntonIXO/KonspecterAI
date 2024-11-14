@@ -1,7 +1,7 @@
 'use server';
 
-import { convertToCoreMessages, Message, streamText, tool } from "ai";
-import { geminiFlashModel } from "@/lib/ai";
+import { convertToCoreMessages, Message, generateText, tool } from "ai";
+import { geminiProModel } from "@/lib/ai";
 import { ollama } from 'ollama-ai-provider';
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
@@ -14,9 +14,9 @@ Your summaries should:
 - **Maintain factual accuracy and technical precision.**
 - **Use clear, direct language.**
 - **Use markdown formatting for better readability.**
-- **Automatically call the \`getInformation\` tool if you need to get information about the document and question.**
-- **Do not ask for confirmation before calling the tool.**
-- **Do not notify the user about the tool call.**
+- **Automatically call the \`getInformation\` tool if you need to get information about the document and question. Example: "Does Nexus phones was used in research?" -> Call getInformation tool. -> Analyze the answer and answer the question. Answer: "Heres you answer: Nexus phones..."**
+- **Do not ask for confirmation before calling getInformation.**
+- **Do not notify the user about getInformation call.**
 
 **Summarization Request:**
 `;
@@ -35,7 +35,6 @@ export async function POST(request: Request) {
       },
     });
   }
-
   const { messages, path }: { messages: Array<Message>, path: string } = await request.json();
   const coreMessages = convertToCoreMessages(messages).filter(
     (message) => message.content.length > 0,
@@ -43,13 +42,14 @@ export async function POST(request: Request) {
 
   // Use Ollama in development, Gemini in production
   const model = process.env.NODE_ENV === 'development' 
-    ? ollama('llama3.2:3b')
-    : geminiFlashModel;
+    ? ollama('llama3.2:1b')
+    : geminiProModel;
 
-  const result = await streamText({
+  const result = await generateText({
     model,
     system: prefix,
     messages: coreMessages,
+    experimental_continueSteps: true,
     experimental_telemetry: {
       isEnabled: false,
       functionId: "summarize-text",
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     },
   });
 
-  return result.toDataStreamResponse();
+  return Response.json(result);
 }
 
 async function findRelevantContent({ question, user_id, path }: { question: string, user_id: string, path: string }) {
@@ -77,20 +77,10 @@ async function findRelevantContent({ question, user_id, path }: { question: stri
       path: path
      }
   });
-  console.log(question, user_id, path);
 
-  if (error) {
+  if (error || !data.result) {
     // Return an error message if the function call fails
-    return { 
-      success: false,
-      message: 'Failed to add resource',
-      error: error.message
-    };
+    return "Failed to get information";
   }
-  console.log(data);
-  return {
-    success: true,
-    message: 'Resource added successfully',
-    data: data.result.text
-  };
+  return data.result;
 }
