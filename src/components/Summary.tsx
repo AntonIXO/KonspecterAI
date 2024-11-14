@@ -128,10 +128,10 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
                                     <div className="prose prose-sm dark:prose-invert">
                                         <ReactMarkdown 
                                             components={{
-                                                code: ({ node, ...props }) => (
+                                                code: ({ ...props }) => (
                                                     <code className="select-text" {...props} />
                                                 ),
-                                                p: ({ node, ...props }) => (
+                                                p: ({ ...props }) => (
                                                     <p className="select-text" {...props} />
                                                 )
                                             }}

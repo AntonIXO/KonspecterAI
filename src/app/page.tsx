@@ -88,7 +88,8 @@ export default function Home() {
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
-          const pageText = textContent.items.map((item: any) => item.str).join(' ');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const pageText = textContent.items.map((item: any) => item.str).join(' '); 
           
           const pageParagraphs = pageText
             .split(/\n\s*\n/)
