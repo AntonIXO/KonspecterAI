@@ -14,7 +14,7 @@ Your summaries should:
 - **Maintain factual accuracy and technical precision.**
 - **Use clear, direct language.**
 - **Use markdown formatting for better readability.**
-- **Call the \`getInfo\` tool if you need to get information about the document and question.**
+- **Automatically call the \`getInformation\` tool if you need to get information about the document and question.**
 - **Do not ask for confirmation before calling the tool.**
 - **Do not notify the user about the tool call.**
 
@@ -56,15 +56,12 @@ export async function POST(request: Request) {
     },
     maxSteps: 3,
     tools: {
-      getInfo: tool({
-        description: `Use this tool to analyze the document and question to provide accurate and relevant information for your summary. 
-    You should also use this tool without asking for confirmation if the user provides or asks for random knowledge unprompted.`,
+      getInformation: tool({
+        description: `get information from your knowledge base to answer questions.`,
         parameters: z.object({
-          content: z
-            .string()
-            .describe('The content to use in the answer.'),
+          question: z.string().describe('the users question'),
         }),
-        execute: async ({ content }) => createResource({ content, user_id: user.id, path: path }),
+        execute: async ({ question }) => findRelevantContent({ question, user_id: user.id, path }),
       }),
     },
   });
@@ -72,14 +69,15 @@ export async function POST(request: Request) {
   return result.toDataStreamResponse();
 }
 
-async function createResource({ content, user_id, path }: { content: string, user_id: string, path: string }) {
+async function findRelevantContent({ question, user_id, path }: { question: string, user_id: string, path: string }) {
   const supabase = await createClient();
   const { data, error } = await supabase.functions.invoke('search', {
-    body: { search: content,
+    body: { search: question,
       user_id: user_id,
       path: path
      }
   });
+  console.log(question, user_id, path);
 
   if (error) {
     // Return an error message if the function call fails
@@ -89,9 +87,10 @@ async function createResource({ content, user_id, path }: { content: string, use
       error: error.message
     };
   }
+  console.log(data);
   return {
     success: true,
     message: 'Resource added successfully',
-    data: data?.result.text?.substring(0, 700) || null
+    data: data.result.text
   };
 }

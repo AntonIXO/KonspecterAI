@@ -27,10 +27,10 @@ Deno.serve(async (req) => {
   // Query embeddings.
   const { data: result, error } = await supabase
     .rpc("query_books", {
-      embedding: JSON.stringify(embedding),
-      match_threshold: 0.8,
-      user_id: user_id,
-      path: path,
+      match_threshold: 0.7,
+      query_path: path,
+      query_embedding: embedding,  
+      query_user_id: user_id,
     })
     .select("text")
     .limit(3);
@@ -38,5 +38,5 @@ Deno.serve(async (req) => {
     return Response.json(error);
   }
 
-  return Response.json({ search, result });
+  return Response.json({ result });
 });

@@ -57,10 +57,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      query_embeddings: {
+      query_books: {
         Args: {
           embedding: string
           match_threshold: number
+          user_id: string
+          path: string
         }
         Returns: {
           content: string

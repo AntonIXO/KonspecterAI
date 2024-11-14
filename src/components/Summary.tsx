@@ -3,7 +3,7 @@ import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
 import { useChat } from 'ai/react';
 import ReactMarkdown from 'react-markdown';
-import { MessageSquare, Save, X } from "lucide-react";
+import { MessageSquare, Save, X, StopCircle } from "lucide-react";
 import { Input } from "./ui/input";
 import { Send } from "lucide-react";
 import { useEffect, useRef, useCallback } from 'react';
@@ -20,7 +20,9 @@ interface SummaryProps {
 
 const SUMMARY_PROMPTS = {
     postfixShort: `
-Create an extremely concise summary in 2-3 sentences that captures only the most essential information. Focus on the core message and key findings. Avoid any unnecessary details or explanations.
+Create an extremely concise summary in 2-3 sentences that captures only the most essential information. 
+Focus on the core message and key findings. Avoid any unnecessary details or explanations. 
+Use the getInformation tool if you need to get information about the document and question.
 
 Text to summarize: 
 `,
@@ -32,6 +34,7 @@ Create a comprehensive summary that includes:
 3. **Technical concepts explained** (if present)
 4. **Practical implications** (if any)
 5. **Important terminology defined** (if any)
+6. **Use getInformation tool if you need to get information about the document and question.**
 
 Text to summarize: 
 `
@@ -45,6 +48,7 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
         body: {
             path: filename,
         },
+        maxSteps: 3,
     });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -109,7 +113,7 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
                 
                 <div className="p-4 flex-1 overflow-y-auto">
                     {messages
-                        .filter(message => !(message.role === 'user' && message.content.startsWith("You are an AI summarization specialist")))
+                        .filter(message => !(message.content.startsWith("Create")))
                         .map((message) => (
                             <div
                                 key={message.id}
@@ -163,7 +167,14 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
                             disabled={isLoading}
                         />
                         <Button type="submit" disabled={isLoading || !input.trim()}>
-                            <Send className="w-4 h-4" />
+                            {isLoading ? (
+                                <StopCircle className="w-4 h-4" onClick={(e) => {
+                                    e.preventDefault();
+                                    stop();
+                                }} />
+                            ) : (
+                                <Send className="w-4 h-4" />
+                            )}
                         </Button>
                     </form>
                 </div>
