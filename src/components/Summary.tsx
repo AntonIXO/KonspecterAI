@@ -166,16 +166,22 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
                             className="flex-1"
                             disabled={isLoading}
                         />
-                        <Button type="submit" disabled={isLoading || !input.trim()}>
-                            {isLoading ? (
-                                <StopCircle className="w-4 h-4" onClick={(e) => {
-                                    e.preventDefault();
-                                    stop();
-                                }} />
-                            ) : (
+                        {isLoading ? (
+                            <Button 
+                                type="button" 
+                                onClick={() => stop()}
+                                variant="destructive"
+                            >
+                                <StopCircle className="w-4 h-4" />
+                            </Button>
+                        ) : (
+                            <Button 
+                                type="submit" 
+                                disabled={!input.trim()}
+                            >
                                 <Send className="w-4 h-4" />
-                            )}
-                        </Button>
+                            </Button>
+                        )}
                     </form>
                 </div>
 

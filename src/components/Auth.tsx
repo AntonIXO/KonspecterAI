@@ -40,7 +40,7 @@ export function Auth() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`
+        redirectTo: 'https://ai.devpins.org/auth/callback'
       }
     })
 

@@ -1,7 +1,7 @@
 'use server';
 
-import { convertToCoreMessages, Message, generateText, tool } from "ai";
-import { geminiProModel } from "@/lib/ai";
+import { convertToCoreMessages, Message, generateText, tool, streamText } from "ai";
+import { geminiFlashModel } from "@/lib/ai";
 import { ollama } from 'ollama-ai-provider';
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
@@ -43,9 +43,9 @@ export async function POST(request: Request) {
   // Use Ollama in development, Gemini in production
   const model = process.env.NODE_ENV === 'development' 
     ? ollama('llama3.2:1b')
-    : geminiProModel;
+    : geminiFlashModel;
 
-  const result = await generateText({
+  const result = await streamText({
     model,
     system: prefix,
     messages: coreMessages,
@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     },
   });
 
-  return Response.json(result);
+  return result.toDataStreamResponse();
 }
 
 async function findRelevantContent({ question, user_id, path }: { question: string, user_id: string, path: string }) {
@@ -82,5 +82,8 @@ async function findRelevantContent({ question, user_id, path }: { question: stri
     // Return an error message if the function call fails
     return "Failed to get information";
   }
-  return data.result;
+
+  // Concatenate all text entries into a single string
+  const result = data.result.map((entry: { text: string }) => entry.text).join('\n');
+  return result;
 }
