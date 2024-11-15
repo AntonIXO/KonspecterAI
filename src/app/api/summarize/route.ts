@@ -40,13 +40,8 @@ export async function POST(request: Request) {
     (message) => message.content.length > 0,
   );
 
-  // Use Ollama in development, Gemini in production
-  const model = process.env.NODE_ENV === 'development' 
-    ? ollama('llama3.2:1b')
-    : geminiFlashModel;
-
   const result = await streamText({
-    model,
+    model: geminiFlashModel,
     system: prefix,
     messages: coreMessages,
     experimental_continueSteps: true,
@@ -72,7 +67,8 @@ export async function POST(request: Request) {
 async function findRelevantContent({ question, user_id, path }: { question: string, user_id: string, path: string }) {
   const supabase = await createClient();
   const { data, error } = await supabase.functions.invoke('search', {
-    body: { search: question,
+    body: { 
+      search: question,
       user_id: user_id,
       path: path
      }
@@ -82,8 +78,7 @@ async function findRelevantContent({ question, user_id, path }: { question: stri
     // Return an error message if the function call fails
     return "Failed to get information";
   }
-
-  // Concatenate all text entries into a single string
-  const result = data.result.map((entry: { text: string }) => entry.text).join('\n');
-  return result;
+  return {
+    information: data.result,
+  };
 }

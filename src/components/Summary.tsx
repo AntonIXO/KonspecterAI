@@ -15,32 +15,9 @@ interface SummaryProps {
     open: boolean;
     setOpen: (open: boolean) => void;
     handleSave: (text: string) => void;
-    type: 'short' | 'full';
 }
 
-const SUMMARY_PROMPTS = {
-    postfixShort: `
-Create an extremely concise summary in 2-3 sentences that captures only the most essential information. 
-Focus on the core message and key findings. Avoid any unnecessary details or explanations. 
-Use the getInformation tool if you need to get information about the document and question.
-
-Text to summarize: 
-`,
-    postfixFull: `
-Create a comprehensive summary that includes:
-
-1. **Brief overview** (2-3 sentences)
-2. **Key points and findings** (using bullet points)
-3. **Technical concepts explained** (if present)
-4. **Practical implications** (if any)
-5. **Important terminology defined** (if any)
-6. **Use getInformation tool if you need to get information about the document and question.**
-
-Text to summarize: 
-`
-}
-
-export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps) {
+export function Summary({ text, open, setOpen, handleSave }: SummaryProps) {
     const { filename } = useFile();
     const { messages, input, handleInputChange, handleSubmit, isLoading, append, setMessages, stop } = useChat({
         api: '/api/summarize',
@@ -48,7 +25,6 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
         body: {
             path: filename,
         },
-        maxSteps: 3,
     });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -63,19 +39,17 @@ export function Summary({ text, open, setOpen, handleSave, type }: SummaryProps)
 
     useEffect(() => {
         if (open && text && messages.length === 0) {
-            const generateSummary = async () => {
+            const startChat = async () => {
                 try {
                     await append({
                         role: 'user',
-                        content: type === 'short' 
-                            ? SUMMARY_PROMPTS.postfixShort + text 
-                            : SUMMARY_PROMPTS.postfixFull + text
+                        content: `I want to discuss this text: ${text}`
                     });
                 } catch (error) {
-                    console.error("Error generating summary:", error);
+                    console.error("Error starting chat:", error);
                 }
             };
-            generateSummary();
+            startChat();
         }
     }, [open, text, append, messages.length]);
 

@@ -72,27 +72,14 @@ interface ReaderSidebarProps extends React.ComponentProps<typeof Sidebar> {
   onSummarizePage?: (type: 'short' | 'full') => void;
 }
 
-// Add type for summary options
-type SummaryOption = {
-  title: string;
-  type: 'short' | 'full';
-}
-
-// Add summary options
-const summaryOptions: SummaryOption[] = [
-  { title: "Quick chat", type: "short" },
-  { title: "Detailed chat", type: "full" },
-]
-
 export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
   // const { compressionMode, setCompressionMode } = useSidebar()
   const [summaries, setSummaries] = useState<MenuItem[]>([])
   const [selectedSummary, setSelectedSummary] = useState<MenuItem | null>(null)
   const supabase = createClient()
   
-  const [summary, setSummary] = useState("")
-  const [summaryOpen, setSummaryOpen] = useState(false)
-  const [summaryType, setSummaryType] = useState<'short' | 'full'>('short')
+  const [chatOpen, setChatOpen] = useState(false)
+  const [chatText, setChatText] = useState("")
 
   // Add state to track open sections
   const [openSections, setOpenSections] = useState<string[]>([]);
@@ -149,7 +136,7 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
 
         // Optimistically update UI
         setSummaries(prev => [newSummary, ...prev])
-        setSummaryOpen(false)
+        setChatOpen(false)
 
         // Save to database
         const { error } = await supabase.from('summaries').insert({
@@ -211,18 +198,16 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
     setSelectedSummary(summary)
   }
 
-  const handlePageSummarize = (type: 'short' | 'full') => {
-    setSummaryType(type)
+  const handleStartChat = () => {
     const page = document.querySelector('.react-pdf__Page');
     const textContent = page?.textContent;
-    setSummary(textContent || '')
-    setSummaryOpen(true)
+    setChatText(textContent || '')
+    setChatOpen(true)
   }
 
-  const handleSummarize = (text: string) => {
-    setSummary(text)
-    setSummaryType('short')
-    setSummaryOpen(true)
+  const handleTextSelection = (text: string) => {
+    setChatText(text)
+    setChatOpen(true)
   }
 
   return (
@@ -242,33 +227,14 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
           <SidebarGroup className="mb-4">
             <SidebarMenu>
               <SidebarMenuItem>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <SidebarMenuButton 
-                      className="w-full justify-center bg-gradient-to-r from-blue-600 to-violet-500 text-white hover:from-blue-700 hover:to-violet-600"
-                      tooltip="Summarize Page"
-                    >
-                      <Zap />
-                      <span className="group-data-[collapsible=icon]:hidden">Chat with PDF</span>
-                      <ChevronRight className="ml-auto group-data-[collapsible=icon]:hidden" />
-                    </SidebarMenuButton>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    side="bottom"
-                    align="start"
-                    className="w-[--radix-popper-anchor-width]"
-                  >
-                    {summaryOptions.map((option) => (
-                      <DropdownMenuItem 
-                        key={option.type}
-                        onClick={() => handlePageSummarize(option.type)}
-                        className="flex items-center"
-                      >
-                        <span>{option.title}</span>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <SidebarMenuButton 
+                  onClick={handleStartChat}
+                  className="w-full justify-center bg-gradient-to-r from-blue-600 to-violet-500 text-white hover:from-blue-700 hover:to-violet-600"
+                  tooltip="Chat with PDF"
+                >
+                  <Zap />
+                  <span className="group-data-[collapsible=icon]:hidden">Chat with PDF</span>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
@@ -378,13 +344,12 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
         content={selectedSummary?.content || ''}
       />
       <Summary 
-        text={summary} 
-        open={summaryOpen} 
-        setOpen={setSummaryOpen}
+        text={chatText} 
+        open={chatOpen} 
+        setOpen={setChatOpen}
         handleSave={handleSave}
-        type={summaryType}
       />
-      <TextSelection handleSummarize={handleSummarize} />
+      <TextSelection handleSummarize={handleTextSelection} />
     </>
   )
 }

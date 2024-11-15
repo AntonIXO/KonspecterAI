@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
   // Query embeddings.
   const { data: result, error } = await supabase
     .rpc("query_books", {
-      match_threshold: 0.7,
+      match_threshold: 0.8,
       query_path: path,
       query_embedding: embedding,  
       query_user_id: user_id,
