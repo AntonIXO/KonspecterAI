@@ -10,5 +10,12 @@ export async function GET(request: Request) {
     await supabase.auth.exchangeCodeForSession(code)
   }
 
-  return NextResponse.redirect(requestUrl.origin)
+  // Get the protocol and host from headers
+  const protocol = request.headers.get('x-forwarded-proto') || 'http'
+  const host = request.headers.get('host')
+  
+  // Construct the redirect URL using the original protocol and host
+  const redirectUrl = `${protocol}://${host}`
+
+  return NextResponse.redirect(redirectUrl)
 } 
