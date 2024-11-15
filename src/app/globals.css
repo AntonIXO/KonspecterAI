@@ -109,7 +109,7 @@ body {
 
 .sticky-controls {
   /* Ensure controls stay above PDF content */
-  z-index: 100;
+  /* z-index: 100; */
   /* Prevent any PDF zoom/scale from affecting the controls */
   transform: translateZ(0);
   -webkit-transform: translateZ(0);

@@ -134,7 +134,7 @@ export default function PDFReader() {
 
       <div className={cn(
         // Base styles
-        "fixed bottom-0 left-0 right-0 z-50",
+        "fixed bottom-0 left-0 right-0",
         "bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm",
         "border-t dark:border-gray-800",
         "p-2 sm:p-4 shadow-lg",
