@@ -1,8 +1,7 @@
 'use server';
 
-import { convertToCoreMessages, Message, generateText, tool, streamText } from "ai";
+import { convertToCoreMessages, Message, tool, streamText } from "ai";
 import { geminiFlashModel } from "@/lib/ai";
-import { ollama } from 'ollama-ai-provider';
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
 

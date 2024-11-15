@@ -61,7 +61,7 @@ export function Summary({ text, open, setOpen, handleSave }: SummaryProps) {
 
     const getAllAnswers = () => {
         return messages
-            .filter(message => message.role === 'assistant')
+            // .filter(message => message.role === 'assistant')
             .map(message => message.content)
             .join('\n\n---\n\n');
     };
