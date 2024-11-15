@@ -77,15 +77,15 @@ export function Summary({ text, open, setOpen, handleSave }: SummaryProps) {
 
     return (
         <Drawer open={open} onOpenChange={handleClose}>
-            <DrawerContent className="max-h-[90vh] flex flex-col">
-                <DrawerHeader>
+            <DrawerContent className="max-h-[95dvh] md:max-h-[90vh] flex flex-col">
+                <DrawerHeader className="flex-shrink-0">
                     <DrawerTitle className="flex items-center gap-2">
                         <MessageSquare className="w-5 h-5" />
                         Summary Chat
                     </DrawerTitle>
                 </DrawerHeader>
                 
-                <div className="p-4 flex-1 overflow-y-auto">
+                <div className="flex-1 overflow-y-auto p-4 min-h-0">
                     {messages
                         .filter(message => !(message.content.startsWith("Create")))
                         .map((message) => (
@@ -131,7 +131,7 @@ export function Summary({ text, open, setOpen, handleSave }: SummaryProps) {
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-4 border-t">
+                <div className="p-4 border-t flex-shrink-0">
                     <form onSubmit={handleMessageSubmit} className="flex gap-2">
                         <Input
                             value={input}
@@ -159,7 +159,7 @@ export function Summary({ text, open, setOpen, handleSave }: SummaryProps) {
                     </form>
                 </div>
 
-                <DrawerFooter className="flex flex-row gap-2">
+                <DrawerFooter className="flex flex-row gap-2 flex-shrink-0">
                     <Button 
                         onClick={() => handleSave(getAllAnswers())}
                         className="flex items-center gap-2"

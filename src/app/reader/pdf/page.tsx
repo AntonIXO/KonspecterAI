@@ -132,12 +132,24 @@ export default function PDFReader() {
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-950 border-t dark:border-gray-800 p-2 sm:p-4 flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 shadow-lg">
+      <div className={cn(
+        // Base styles
+        "fixed bottom-0 left-0 right-0 z-50",
+        "bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm",
+        "border-t dark:border-gray-800",
+        "p-2 sm:p-4 shadow-lg",
+        // Safe area padding for mobile devices
+        "pb-[env(safe-area-inset-bottom,0.5rem)]",
+        // Layout
+        "flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4",
+        // Ensure controls stay above content
+        "sticky-controls"
+      )}>
         <Button
           onClick={goToPrevPage}
           disabled={currentPage <= 1}
           variant="outline"
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto shadow-sm"
         >
           <ChevronLeft className="w-4 h-4 mr-2" />
           Previous
@@ -172,7 +184,7 @@ export default function PDFReader() {
                   setInputValue(String(currentPage));
                 }
               }}
-              className="w-16 sm:w-20 text-center"
+              className="w-16 sm:w-20 text-center shadow-sm"
             />
             of {numPages}
           </span>
@@ -182,7 +194,7 @@ export default function PDFReader() {
           onClick={goToNextPage}
           disabled={currentPage >= (numPages || 1)}
           variant="outline"
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto shadow-sm"
         >
           Next
           <ChevronRight className="w-4 h-4 ml-2" />
