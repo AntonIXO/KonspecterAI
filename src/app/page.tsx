@@ -20,6 +20,13 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString();
 
+// Add this helper function near the top of the file
+const isEnglishFilename = (filename: string): boolean => {
+  // This regex allows only English letters, numbers, spaces, hyphens, underscores, and dots
+  const englishFilenameRegex = /^[a-zA-Z0-9\s\-_.]+$/;
+  return englishFilenameRegex.test(filename);
+};
+
 export default function Home() {
   const router = useRouter();
   const { file, setFile } = useFile();
@@ -44,7 +51,12 @@ export default function Home() {
 
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles && acceptedFiles.length > 0) {
-      setFile(acceptedFiles[0]);
+      const file = acceptedFiles[0];
+      if (!isEnglishFilename(file.name)) {
+        toast.error('Please use only English characters in the filename');
+        return;
+      }
+      setFile(file);
     }
   };
 
@@ -67,7 +79,12 @@ export default function Home() {
   });
 
   const handleUpload = async () => {
-    if (!file || !user) return
+    if (!file || !user) return;
+    
+    if (!isEnglishFilename(file.name)) {
+      toast.error('Please use only English characters in the filename');
+      return;
+    }
     
     setIsUploading(true);
     setUploadProgress(0);

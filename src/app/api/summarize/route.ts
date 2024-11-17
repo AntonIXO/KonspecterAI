@@ -13,6 +13,7 @@ Your summaries should:
 - **Maintain factual accuracy and technical precision.**
 - **Use clear, direct language.**
 - **Use markdown formatting for better readability.**
+- **Never answer "I don't know" or "I don't have information about it" use the \`getInformation\` tool instead.**
 - **Automatically call the \`getInformation\` tool if you need to get information about the document and question. Example: "Does Nexus phones was used in research?" -> Call getInformation tool. -> Analyze the answer and answer the question. Answer: "Heres you answer: Nexus phones..."**
 - **Do not ask for confirmation before calling getInformation.**
 - **Do not notify the user about getInformation call.**
@@ -24,6 +25,7 @@ System: You are right to call me out on that. My previous responses were incorre
 User: On what blockchain bidask based?
 -> Using getInformation tool -> System: The provided text mentions that the Bidask protocol is implemented on The Open Network (TON).
 **
+
 
 **Summarization Request:**
 `;

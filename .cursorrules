@@ -6,6 +6,6 @@ Use skeleton for loading states.
 
 This is a Next.js project. Use app router. Use server side rendering if possible.
 
-Use yarn instead of npm.
+Use bun instead of npm.
 
 Use createClient() from src/utils/supabase/client.ts and createServerClient() from src/utils/supabase/server.ts for supabase.

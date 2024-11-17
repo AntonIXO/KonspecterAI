@@ -134,7 +134,7 @@ export default function PDFReader() {
 
       <div className={cn(
         // Base styles
-        "fixed bottom-0 left-0 right-0",
+        "fixed bottom-0 left-0 right-0 z-40",
         "bg-white/80 dark:bg-gray-950/80 backdrop-blur-sm",
         "border-t dark:border-gray-800",
         "p-2 sm:p-4 shadow-lg",
@@ -200,7 +200,7 @@ export default function PDFReader() {
           <ChevronRight className="w-4 h-4 ml-2" />
         </Button>
       </div>
-      <ReaderSidebar variant="floating"/>
+      <ReaderSidebar variant="floating" className="z-50"/>
     </div>
   );
 }

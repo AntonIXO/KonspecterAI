@@ -96,7 +96,7 @@ export function TextSelection({ handleSummarize }: { handleSummarize: (text: str
     >
       <Button
         size="sm"
-        className="shadow-lg after:absolute after:top-full after:left-1/2 after:-translate-x-2 after:h-0 after:w-0 after:border-x-[6px] after:border-x-transparent after:border-b-[8px] after:border-b-black after:rotate-180"
+        className="shadow-lg bg-black hover:bg-black/90 text-white dark:bg-black dark:hover:bg-black/90 dark:text-white after:absolute after:top-full after:left-1/2 after:-translate-x-2 after:h-0 after:w-0 after:border-x-[6px] after:border-x-transparent after:border-b-[8px] after:border-b-black after:rotate-180"
         onClick={handleClick}
       >
         Summarize

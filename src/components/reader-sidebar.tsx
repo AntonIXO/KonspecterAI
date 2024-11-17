@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronRight, Zap, LucideIcon, ScrollText, X } from "lucide-react"
+import { ChevronRight, Zap, LucideIcon, ScrollText, X, Brain } from "lucide-react"
 import { useEffect, useState } from 'react'
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link"
@@ -29,12 +29,8 @@ import { SummaryDialog } from "@/components/summary-dialog"
 import { TextSelection } from "@/components/TextSelection"
 import { Summary } from "./Summary";
 import { toast } from "sonner";
-
-// const compressionModes = [
-//   { title: "Default (1:1)", value: "1:1", icon: Bot },
-//   { title: "Compression (1:2)", value: "1:2", icon: Zap },
-//   { title: "SuperCompression (1:3)", value: "1:3", icon: "⚡⚡" },
-// ] as const
+import { Quiz } from "@/components/Quiz"
+import { useFile } from "@/lib/FileContext";
 
 // Add proper type definitions
 type MenuItem = {
@@ -58,6 +54,11 @@ const baseData: { aiFeatures: FeatureSection[] } = {
       icon: ScrollText,
       items: [], // This will be populated dynamically
     },
+    {
+      title: "Quiz",
+      icon: Brain,
+      items: [], // Will be populated with saved quizzes
+    }
   ],
 }
 
@@ -67,25 +68,32 @@ interface ReaderSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
-  // const { compressionMode, setCompressionMode } = useSidebar()
-  const [summaries, setSummaries] = useState<MenuItem[]>([])
-  const [selectedSummary, setSelectedSummary] = useState<MenuItem | null>(null)
+  const [data, setData] = useState(baseData); // Initialize state with baseData
+  const { state } = useSidebar();
+  const { filename } = useFile();
+
   const supabase = createClient()
-  
+
   const [chatOpen, setChatOpen] = useState(false)
   const [chatText, setChatText] = useState("")
+
+  const [quizOpen, setQuizOpen] = useState(false)
+  const [quizText, setQuizText] = useState("")
 
   // Add state to track open sections
   const [openSections, setOpenSections] = useState<string[]>([]);
 
+  // Add selectedSummary state
+  const [selectedSummary, setSelectedSummary] = useState<MenuItem | null>(null);
+
   // Add effect to close sections when sidebar collapses
-  const { state } = useSidebar()
   useEffect(() => {
     if (state === 'collapsed') {
       setOpenSections([]);
     }
   }, [state]);
 
+  // Fetch summaries and update 'Summaries' section
   useEffect(() => {
     const fetchSummaries = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -95,6 +103,7 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
         .from('summaries')
         .select('*')
         .order('created_at', { ascending: false })
+        .eq('path', filename)
         .limit(5)
 
       if (error) {
@@ -102,48 +111,95 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
         return
       }
 
-      const summaryItems = summariesData.map((summary) => ({
+      const summaryItems = summariesData.map((summary: any) => ({
         title: summary.content.substring(0, 30) + '...',
         url: `/summaries/${summary.id}`,
         content: summary.content,
       }))
       
-      setSummaries(summaryItems)
+      // Update the Summaries section in data
+      setData(prev => ({
+        aiFeatures: prev.aiFeatures.map(section => 
+          section.title === "Summaries" 
+            ? { ...section, items: summaryItems }
+            : section
+        )
+      }));
     }
     fetchSummaries()
-  }, [supabase])
+  }, [supabase, filename])
 
-  const handleSave = async (text: string) => {
+  // Fetch quizzes and update 'Quiz' section
+  useEffect(() => {
+    const fetchQuizzes = async () => {
+      const { data: quizzes, error } = await supabase
+        .from('quizzes')
+        .select('public_id, title, path, created_at')
+        .eq('path', filename)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      const quizItems = quizzes.map((quiz: any) => ({
+        title: quiz.title,
+        url: `/quiz/${quiz.public_id}`,
+      }));
+
+      // Update the Quiz section in data
+      setData(prev => ({
+        aiFeatures: prev.aiFeatures.map(section => 
+          section.title === "Quiz" 
+            ? { ...section, items: quizItems }
+            : section
+        )
+      }));
+    };
+
+    fetchQuizzes();
+  }, [supabase, filename]);
+
+  const handleSaveSummary = async (text: string) => {
     try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-            toast.error("Please login to save summaries")
-            return
-        }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please login to save summaries");
+        return;
+      }
 
-        // Create new summary object
-        const newSummary = {
-            title: text.substring(0, 30) + '...',
-            url: `/summaries/${Date.now()}`, // Temporary ID until we get real one
-            content: text,
-        }
+      // Create new summary object
+      const newSummary = {
+        title: text.substring(0, 30) + '...',
+        url: `/summaries/${Date.now()}`, // Temporary ID until we get real one
+        content: text,
+      }
 
-        // Optimistically update UI
-        setSummaries(prev => [newSummary, ...prev])
-        setChatOpen(false)
+      // Optimistically update UI
+      setData(prev => ({
+        aiFeatures: prev.aiFeatures.map(section => 
+          section.title === "Summaries" 
+            ? { ...section, items: [newSummary, ...section.items] }
+            : section
+        )
+      }));
+      setChatOpen(false)
 
-        // Save to database
-        const { error } = await supabase.from('summaries').insert({
-            user_id: user.id,
-            content: text,
-            created_at: new Date().toISOString()
-        })
+      // Save to database
+      const { error } = await supabase.from('summaries').insert({
+        user_id: user.id,
+        content: text,
+        path: filename,
+        created_at: new Date().toISOString()
+      })
 
-        if (error) throw error
-        toast.success("Summary saved successfully")
+      if (error) throw error
+      toast.success("Summary saved successfully")
     } catch (error) {
-        console.error(error)
-        toast.error("Failed to save summary")
+      console.error(error)
+      toast.error("Failed to save summary")
     }
   }
 
@@ -151,14 +207,15 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
     e.stopPropagation() // Prevent triggering the summary click
     try {
       const summaryId = summaryUrl.split('/').pop()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        toast.error("Please login to delete summaries")
-        return
-      }
 
       // Optimistically update UI
-      setSummaries(prev => prev.filter(s => s.url !== summaryUrl))
+      setData(prev => ({
+        aiFeatures: prev.aiFeatures.map(section => 
+          section.title === "Summaries" 
+            ? { ...section, items: section.items.filter(s => s.url !== summaryUrl) }
+            : section
+        )
+      }));
 
       // Delete from database
       const { error } = await supabase
@@ -174,23 +231,9 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
     }
   }
 
-  // Combine base data with dynamic summaries
-  const data = {
-    aiFeatures: baseData.aiFeatures.map(section => {
-      if (section.title === "Summaries") {
-        return {
-          ...section,
-          items: summaries
-        }
-      }
-      return section
-    })
-  }
-
-  // Add handler for summary click
   const handleSummaryClick = (summary: MenuItem) => {
-    setSelectedSummary(summary)
-  }
+    setSelectedSummary(summary);
+  };
 
   const handleStartChat = () => {
     const page = document.querySelector('.react-pdf__Page');
@@ -202,6 +245,41 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
   const handleTextSelection = (text: string) => {
     setChatText(text)
     setChatOpen(true)
+  }
+
+  const handleStartQuiz = () => {
+    const page = document.querySelector('.react-pdf__Page')
+    const textContent = page?.textContent
+    setQuizText(textContent || '')
+    setQuizOpen(true)
+  }
+
+  const handleDeleteQuiz = async (quizUrl: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      const quizId = quizUrl.split('/').pop()
+
+      // Optimistically update UI
+      setData(prev => ({
+        aiFeatures: prev.aiFeatures.map(section => 
+          section.title === "Quiz" 
+            ? { ...section, items: section.items.filter(q => q.url !== quizUrl) }
+            : section
+        )
+      }));
+
+      // Delete from database
+      const { error } = await supabase
+        .from('quizzes')
+        .delete()
+        .eq('public_id', quizId)
+
+      if (error) throw error
+      toast.success("Quiz deleted successfully")
+    } catch (error) {
+      console.error(error)
+      toast.error("Failed to delete quiz")
+    }
   }
 
   return (
@@ -228,6 +306,16 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
                 >
                   <Zap />
                   <span className="group-data-[collapsible=icon]:hidden">Chat with PDF</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={handleStartQuiz}
+                  className="w-full justify-center bg-gradient-to-r from-green-600 to-teal-500 text-white hover:from-green-700 hover:to-teal-600"
+                  tooltip="Generate Quiz"
+                >
+                  <Brain />
+                  <span className="group-data-[collapsible=icon]:hidden">Generate Quiz</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
@@ -263,7 +351,14 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
                         {section.items.map((item) => (
                           <SidebarMenuItem key={item.title}>
                             <SidebarMenuButton
-                              onClick={() => handleSummaryClick(item)}
+                              onClick={() => {
+                                if (section.title === "Summaries") {
+                                  handleSummaryClick(item);
+                                }
+                                if (section.title === "Quiz") {
+                                  window.location.href = item.url;
+                                }
+                              }}
                               className="cursor-pointer group relative"
                               tooltip={item.title}
                             >
@@ -273,10 +368,16 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
                                 <item.icon className="mr-2 h-4 w-4" />
                               ) : null}
                               <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
-                              <X 
-                                className="absolute right-2 top-1/2 -translate-y-1/2 h-2 w-2 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
-                                onClick={(e) => handleDeleteSummary(item.url, e)}
-                              />
+                              {(section.title === "Summaries" || section.title === "Quiz") && (
+                                <X 
+                                  className="absolute right-2 top-1/2 -translate-y-1/2 h-2 w-2 opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-500"
+                                  onClick={(e) => 
+                                    section.title === "Summaries" 
+                                      ? handleDeleteSummary(item.url, e)
+                                      : handleDeleteQuiz(item.url, e)
+                                  }
+                                />
+                              )}
                             </SidebarMenuButton>
                           </SidebarMenuItem>
                         ))}
@@ -287,42 +388,8 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
               ))}
             </SidebarMenu>
             <SidebarMenu>
-            {/* <SidebarMenuItem>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <SidebarMenuButton tooltip="Compression Mode">
-                    <Bot className="mr-2" />
-                    <span className="group-data-[collapsible=icon]:hidden">
-                      Compression mode: {compressionMode}
-                    </span>
-                    <ChevronRight className="ml-auto group-data-[collapsible=icon]:hidden" />
-                  </SidebarMenuButton>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  side="right"
-                  className="w-[--radix-popper-anchor-width]"
-                >
-                  {compressionModes.map((item) => (
-                    <DropdownMenuItem 
-                      key={item.value}
-                      onClick={() => setCompressionMode(item.value)}
-                      className="flex items-center"
-                    >
-                      {typeof item.icon === 'string' ? (
-                        <span className="mr-2">{item.icon}</span>
-                      ) : (
-                        <item.icon className="mr-2 h-4 w-4" />
-                      )}
-                      <span>{item.title}</span>
-                      {compressionMode === item.value && (
-                        <span className="ml-auto text-primary">✓</span>
-                      )}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </SidebarMenuItem> */}
-          </SidebarMenu>
+              {/* You can add more menu items or features here */}
+            </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
@@ -341,9 +408,14 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
         text={chatText} 
         open={chatOpen} 
         setOpen={setChatOpen}
-        handleSave={handleSave}
+        handleSave={handleSaveSummary}
       />
       <TextSelection handleSummarize={handleTextSelection} />
+      <Quiz 
+        text={quizText}
+        open={quizOpen}
+        setOpen={setQuizOpen}
+      />
     </>
   )
 }
