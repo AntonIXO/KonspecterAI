@@ -1,10 +1,25 @@
+-- Create function for custom ID generation
+create or replace function generate_url_safe_id()
+returns text as $$
+declare
+  chars text := 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  result text := '';
+  i integer := 0;
+begin
+  for i in 1..8 loop
+    result := result || substr(chars, floor(random() * length(chars) + 1)::integer, 1);
+  end loop;
+  return result;
+end;
+$$ language plpgsql;
+
 create table if not exists public.quizzes (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users(id),
   title text,
   questions jsonb not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  public_id text unique default encode(gen_random_bytes(9), 'base64') not null
+  public_id text unique default generate_url_safe_id() not null
 );
 
 -- Enable RLS

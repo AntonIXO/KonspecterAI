@@ -15,6 +15,8 @@ import { cn } from "@/lib/utils";
 import { ChevronLeft } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useSwipeable } from "react-swipeable";
+import { useText } from '@/lib/TextContext';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -31,6 +33,8 @@ export default function PDFReader() {
   const [inputValue, setInputValue] = useState<string>(String(currentPage));
   const { state } = useSidebar();
   const [windowWidth, setWindowWidth] = useState<number>(maxWidth);
+  const { pagesContent, setPageContent, clearContent } = useText();
+  const [pdfDocument, setPdfDocument] = useState<any>(null);
 
   useEffect(() => {
     if (!file) {
@@ -95,6 +99,85 @@ export default function PDFReader() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Add swipe handlers
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => {
+      if (currentPage < (numPages || 1)) {
+        goToNextPage();
+      }
+    },
+    onSwipedRight: () => {
+      if (currentPage > 1) {
+        goToPrevPage();
+      }
+    },
+    preventScrollOnSwipe: true,
+    trackMouse: false
+  });
+
+  // Clear content when file changes
+  useEffect(() => {
+    if (file) {
+      clearContent();
+    }
+  }, [file, clearContent]);
+
+  // Initialize PDF document once when file changes
+  useEffect(() => {
+    if (!file) return;
+    
+    const loadPdf = async () => {
+      try {
+        // Convert File to ArrayBuffer
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument(arrayBuffer).promise;
+        setPdfDocument(pdf);
+        clearContent();
+      } catch (error) {
+        console.error('Error loading PDF:', error);
+      }
+    };
+
+    loadPdf();
+  }, [file, clearContent]);
+
+  // Extract text content when page changes
+  const extractPageContent = useCallback(async (pageNum: number) => {
+    if (!pdfDocument) return;
+
+    // Skip if we already have this page's content
+    if (pagesContent[pageNum]) return;
+
+    try {
+      const page = await pdfDocument.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ')
+        .trim();
+      
+      setPageContent(pageNum, pageText);
+    } catch (error) {
+      console.error('Error extracting text:', error);
+    }
+  }, [pdfDocument, pagesContent, setPageContent]);
+
+  // Handle page changes
+  useEffect(() => {
+    if (!pdfDocument) return;
+
+    // Extract content for current page and adjacent pages
+    const pagesToExtract = [
+      currentPage - 2,
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      currentPage + 2
+    ].filter(page => page > 0 && page <= (numPages || 0));
+
+    Promise.all(pagesToExtract.map(pageNum => extractPageContent(pageNum)));
+  }, [currentPage, numPages, pdfDocument, extractPageContent]);
+
   return (
     <div className="relative min-h-screen pb-[120px] sm:pb-[72px]">
       <div className={cn(
@@ -111,7 +194,7 @@ export default function PDFReader() {
 
           <Card className="w-full overflow-hidden bg-white">
             <CardContent className="p-2 sm:p-4 md:p-6">
-              <div className="w-full flex flex-col items-center">
+              <div className="w-full flex flex-col items-center" {...swipeHandlers}>
                 <Document
                   file={file}
                   onLoadSuccess={onDocumentLoadSuccess}

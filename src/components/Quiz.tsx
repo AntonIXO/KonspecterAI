@@ -27,6 +27,7 @@ import {
 import { useRouter } from "next/navigation"
 import { RainbowButton } from "./ui/rainbow-button"
 import { useFile } from "@/lib/FileContext"
+import { useText } from '@/lib/TextContext';
 
 interface Question {
   question: string
@@ -35,14 +36,14 @@ interface Question {
 }
 
 interface QuizProps {
-  text?: string
   open?: boolean
   setOpen?: (open: boolean) => void
   initialQuiz?: QuizType
   standalone?: boolean
 }
 
-export function Quiz({ text, open, setOpen, initialQuiz, standalone = false }: QuizProps) {
+export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizProps) {
+  const { pagesContent } = useText();
   const [questions, setQuestions] = useState<Question[]>(initialQuiz?.questions || [])
   const [userAnswers, setUserAnswers] = useState<number[]>([])
   const [showResults, setShowResults] = useState(false)
@@ -53,15 +54,16 @@ export function Quiz({ text, open, setOpen, initialQuiz, standalone = false }: Q
   const router = useRouter()
   const { filename } = useFile();
 
-  // Modify useEffect to prevent clearing questions when dialog closes
+  // Modified useEffect to only use TextContext
   React.useEffect(() => {
     if (initialQuiz) {
       setQuestions(initialQuiz.questions);
       setUserAnswers(new Array(initialQuiz.questions.length).fill(-1));
-    } else if (open && text && !questions.length && !loading) {
-      handleGenerateQuiz();
+    } else if (open && !questions.length && !loading) {
+      const textToQuiz = Object.values(pagesContent).join('\n\n');
+      handleGenerateQuiz(textToQuiz);
     }
-  }, [open, text, initialQuiz]);
+  }, [open, pagesContent, initialQuiz, questions.length, loading]);
 
   // Remove the cleanup effect that was clearing questions
   React.useEffect(() => {
@@ -73,14 +75,14 @@ export function Quiz({ text, open, setOpen, initialQuiz, standalone = false }: Q
     }
   }, [open, standalone]);
 
-  const handleGenerateQuiz = async () => {
-    if (!text) return; // Add this check
+  const handleGenerateQuiz = async (textContent: string) => {
+    if (!textContent) return;
     
     try {
       setLoading(true);
-      setQuestions([]); // Only clear questions when generating new ones
+      setQuestions([]);
       
-      const quiz = await generateQuiz(text);
+      const quiz = await generateQuiz(textContent);
       
       setQuestions(quiz.questions);
       setUserAnswers(new Array(quiz.questions.length).fill(-1));
@@ -150,10 +152,11 @@ export function Quiz({ text, open, setOpen, initialQuiz, standalone = false }: Q
       })
     }
   }
+  if (!filename) return;
 
   const handleSave = async () => {
     try {
-      const id = await saveQuiz({ questions }, filename || '');
+      const id = await saveQuiz({ questions }, filename);
       setPublicId(id);
       toast.success("Quiz saved successfully!");
     } catch (error) {
@@ -164,11 +167,13 @@ export function Quiz({ text, open, setOpen, initialQuiz, standalone = false }: Q
 
   const handleShare = async () => {
     try {
-      if (!publicId) {
-        const id = await saveQuiz({ questions }, filename || '');
-        setPublicId(id);
+      let shareId = publicId;
+      if (!shareId) {
+        // Save and get the ID directly without relying on state
+        shareId = await saveQuiz({ questions }, filename);
+        setPublicId(shareId); // Update state for future use
       }
-      const url = `${window.location.origin}/quiz/${publicId}`;
+      const url = `${window.location.origin}/quiz/${shareId}`; // Use the local variable instead of state
       await navigator.clipboard.writeText(url);
       toast.success("Quiz link copied to clipboard!");
     } catch (error) {
@@ -297,30 +302,31 @@ export function Quiz({ text, open, setOpen, initialQuiz, standalone = false }: Q
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle>Quiz</DialogTitle>
-            {questions.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon">
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleSave}>
-                    Save Quiz
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleShare}>
-                    Share Quiz
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
+          <DialogTitle>Quiz</DialogTitle>
           <DialogDescription>
             Test your knowledge of the selected text
           </DialogDescription>
         </DialogHeader>
+
+        {questions.length > 0 && (
+          <div className="absolute right-4 top-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Share2 className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={handleSave}>
+                  Save Quiz
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleShare}>
+                  Share Quiz
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
 
         <div className="h-[400px] overflow-y-auto pr-4">
           {loading && (
@@ -405,7 +411,12 @@ export function Quiz({ text, open, setOpen, initialQuiz, standalone = false }: Q
             <Button onClick={checkAnswers}>Check Answers</Button>
           )}
           {questions.length > 0 && showResults && (
-            <Button onClick={handleGenerateQuiz}>Try New Quiz</Button>
+            <Button onClick={() => {
+              const textToQuiz = Object.values(pagesContent).join('\n\n');
+              handleGenerateQuiz(textToQuiz);
+            }}>
+              Try New Quiz
+            </Button>
           )}
         </DialogFooter>
       </DialogContent>

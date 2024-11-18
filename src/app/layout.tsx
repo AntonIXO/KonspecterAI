@@ -8,6 +8,7 @@ import Script from 'next/script';
 import { InstallPWA } from '@/components/InstallPWA';
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { TextProvider } from '@/lib/TextContext';
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -49,27 +50,29 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <SidebarProvider>
-            <FileProvider>
-              <main className="flex-1">
-                <div className="container mx-auto">
-                  {children}
+        <TextProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <SidebarProvider>
+              <FileProvider>
+                <main className="flex-1">
+                  <div className="container mx-auto">
+                    {children}
+                  </div>
+                </main>
+                <div className="fixed bottom-4 right-4 flex gap-2">
+                  <ThemeToggle />
+                  <InstallPWA />
                 </div>
-              </main>
-              <div className="fixed bottom-4 right-4 flex gap-2">
-                <ThemeToggle />
-                <InstallPWA />
-              </div>
-              <Toaster />
-            </FileProvider>
-          </SidebarProvider>
-        </ThemeProvider>
+                <Toaster />
+              </FileProvider>
+            </SidebarProvider>
+          </ThemeProvider>
+        </TextProvider>
         <Script
           id="register-sw"
           strategy="lazyOnload"

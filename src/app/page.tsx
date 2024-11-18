@@ -20,11 +20,35 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url,
 ).toString();
 
-// Add this helper function near the top of the file
-const isEnglishFilename = (filename: string): boolean => {
-  // This regex allows only English letters, numbers, spaces, hyphens, underscores, and dots
-  const englishFilenameRegex = /^[a-zA-Z0-9\s\-_.]+$/;
-  return englishFilenameRegex.test(filename);
+// Add these helper functions near the top of the file
+const sanitizeFilename = (filename: string): string => {
+  // Split filename into name and extension
+  const lastDot = filename.lastIndexOf('.');
+  const name = lastDot !== -1 ? filename.slice(0, lastDot) : filename;
+  const extension = lastDot !== -1 ? filename.slice(lastDot) : '';
+
+  // Replace non-English characters with closest English equivalents
+  // Add more mappings as needed
+  const charMap: { [key: string]: string } = {
+    'á': 'a', 'à': 'a', 'ã': 'a', 'â': 'a', 'ä': 'a',
+    'é': 'e', 'è': 'e', 'ê': 'e', 'ë': 'e',
+    'í': 'i', 'ì': 'i', 'î': 'i', 'ï': 'i',
+    'ó': 'o', 'ò': 'o', 'õ': 'o', 'ô': 'o', 'ö': 'o',
+    'ú': 'u', 'ù': 'u', 'û': 'u', 'ü': 'u',
+    'ý': 'y', 'ñ': 'n',
+    'ß': 'ss',
+    // Add more mappings for other characters as needed
+  };
+
+  // Replace special characters and spaces
+  const sanitized = name
+    .split('')
+    .map(char => charMap[char.toLowerCase()] || char)
+    .join('')
+    .replace(/[^a-zA-Z0-9-_.]/g, '_') // Replace any remaining non-English chars with underscore
+    .replace(/_{2,}/g, '_'); // Replace multiple consecutive underscores with single underscore
+
+  return sanitized + extension;
 };
 
 export default function Home() {
@@ -52,11 +76,16 @@ export default function Home() {
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles && acceptedFiles.length > 0) {
       const file = acceptedFiles[0];
-      if (!isEnglishFilename(file.name)) {
-        toast.error('Please use only English characters in the filename');
-        return;
+      const sanitizedName = sanitizeFilename(file.name);
+      
+      if (sanitizedName !== file.name) {
+        // Create new file with sanitized name
+        const newFile = new File([file], sanitizedName, { type: file.type });
+        toast.success(`File renamed to: ${sanitizedName}`);
+        setFile(newFile);
+      } else {
+        setFile(file);
       }
-      setFile(file);
     }
   };
 
@@ -81,11 +110,7 @@ export default function Home() {
   const handleUpload = async () => {
     if (!file || !user) return;
     
-    if (!isEnglishFilename(file.name)) {
-      toast.error('Please use only English characters in the filename');
-      return;
-    }
-    
+    // No need for filename validation here anymore since we're always using sanitized names
     setIsUploading(true);
     setUploadProgress(0);
     setIndexingProgress({ current: 0, total: 0 });

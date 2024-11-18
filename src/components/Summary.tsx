@@ -9,15 +9,17 @@ import { Send } from "lucide-react";
 import { useEffect, useRef, useCallback } from 'react';
 import { useFile } from "@/lib/FileContext";
 import { cn } from "@/lib/utils";
+import { useText } from '@/lib/TextContext';
 
 interface SummaryProps {
-    text: string;
     open: boolean;
     setOpen: (open: boolean) => void;
     handleSave: (text: string) => void;
+    selectedText?: string;
 }
 
-export function Summary({ text, open, setOpen, handleSave }: SummaryProps) {
+export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProps) {
+    const { pagesContent } = useText();
     const { filename } = useFile();
     const { messages, input, handleInputChange, handleSubmit, isLoading, append, setMessages, stop } = useChat({
         api: '/api/summarize',
@@ -38,12 +40,15 @@ export function Summary({ text, open, setOpen, handleSave }: SummaryProps) {
     }, [messages]);
 
     useEffect(() => {
-        if (open && text && messages.length === 0) {
+        if (open) {
+            setMessages([]); // Clear previous messages
             const startChat = async () => {
                 try {
+                    const textToSummarize = selectedText || Object.values(pagesContent).join('\n\n');
+                    
                     await append({
                         role: 'user',
-                        content: `I want to discuss this text: ${text}`
+                        content: `I want to discuss this text: ${textToSummarize}`
                     });
                 } catch (error) {
                     console.error("Error starting chat:", error);
@@ -51,7 +56,7 @@ export function Summary({ text, open, setOpen, handleSave }: SummaryProps) {
             };
             startChat();
         }
-    }, [open, text, append, messages.length]);
+    }, [open, selectedText, pagesContent, append, setMessages]);
 
     const handleClose = useCallback(() => {
         stop(); // Cancel any ongoing requests
@@ -61,7 +66,7 @@ export function Summary({ text, open, setOpen, handleSave }: SummaryProps) {
 
     const getAllAnswers = () => {
         return messages
-            // .filter(message => message.role === 'assistant')
+            .filter(message => !(message.content.startsWith("I want to")))
             .map(message => message.content)
             .join('\n\n---\n\n');
     };
@@ -81,13 +86,13 @@ export function Summary({ text, open, setOpen, handleSave }: SummaryProps) {
                 <DrawerHeader className="flex-shrink-0">
                     <DrawerTitle className="flex items-center gap-2">
                         <MessageSquare className="w-5 h-5" />
-                        Summary Chat
+                        {selectedText ? "Selected Text Summary" : "Page Summary"}
                     </DrawerTitle>
                 </DrawerHeader>
                 
                 <div className="flex-1 overflow-y-auto p-4 min-h-0">
                     {messages
-                        .filter(message => !(message.content.startsWith("Create")))
+                        .filter(message => !(message.content.startsWith("I want to")))
                         .map((message) => (
                             <div
                                 key={message.id}

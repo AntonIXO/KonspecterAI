@@ -75,16 +75,16 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
   const supabase = createClient()
 
   const [chatOpen, setChatOpen] = useState(false)
-  const [chatText, setChatText] = useState("")
-
   const [quizOpen, setQuizOpen] = useState(false)
-  const [quizText, setQuizText] = useState("")
 
   // Add state to track open sections
   const [openSections, setOpenSections] = useState<string[]>([]);
 
   // Add selectedSummary state
   const [selectedSummary, setSelectedSummary] = useState<MenuItem | null>(null);
+
+  // Add selectedText state
+  const [selectedText, setSelectedText] = useState<string>("");
 
   // Add effect to close sections when sidebar collapses
   useEffect(() => {
@@ -236,21 +236,15 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
   };
 
   const handleStartChat = () => {
-    const page = document.querySelector('.react-pdf__Page');
-    const textContent = page?.textContent;
-    setChatText(textContent || '')
     setChatOpen(true)
   }
 
   const handleTextSelection = (text: string) => {
-    setChatText(text)
-    setChatOpen(true)
-  }
+    setSelectedText(text);
+    setChatOpen(true);
+  };
 
   const handleStartQuiz = () => {
-    const page = document.querySelector('.react-pdf__Page')
-    const textContent = page?.textContent
-    setQuizText(textContent || '')
     setQuizOpen(true)
   }
 
@@ -405,14 +399,13 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
         content={selectedSummary?.content || ''}
       />
       <Summary 
-        text={chatText} 
         open={chatOpen} 
         setOpen={setChatOpen}
         handleSave={handleSaveSummary}
+        selectedText={selectedText}
       />
       <TextSelection handleSummarize={handleTextSelection} />
       <Quiz 
-        text={quizText}
         open={quizOpen}
         setOpen={setQuizOpen}
       />
