@@ -24,6 +24,9 @@
     "@radix-ui/react-slot": "^1.1.0",
     "@radix-ui/react-tabs": "^1.1.1",
     "@radix-ui/react-tooltip": "^1.1.4",
+    "@serwist/next": "^9.0.10",
+    "@serwist/precaching": "^9.0.10",
+    "@serwist/sw": "^9.0.10",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.46.1",
     "@wojtekmaj/react-hooks": "^1.21.0",
@@ -56,11 +59,15 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@types/react-pdf": "^7.0.0",
-    "eslint": "^9.14.0",
+    "eslint": "^9.15.0",
     "eslint-config-next": "^15.0.3",
     "postcss": "^8.4.49",
-    "supabase": "^1.223.7",
+    "supabase": "^1.223.10",
     "tailwindcss": "^3.4.15",
     "typescript": "^5.6.3"
-  }
+  },
+  "trustedDependencies": [
+    "core-js",
+    "es5-ext"
+  ]
 }

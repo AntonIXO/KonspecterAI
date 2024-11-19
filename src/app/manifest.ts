@@ -9,6 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
     display: 'standalone',
     background_color: '#ffffff',
     theme_color: '#000000',
+    orientation: 'portrait',
     icons: [
       {
         src: '/icons/web-app-manifest-192x192.png',
@@ -22,5 +23,13 @@ export default function manifest(): MetadataRoute.Manifest {
         type: 'image/png',
       },
     ],
+    "categories": ["productivity", "education"],
+    "shortcuts": [
+      {
+        "name": "Home",
+        "url": "/",
+        "description": "Return to home page"
+      }
+    ]
   }
 } 

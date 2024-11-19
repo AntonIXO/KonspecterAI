@@ -27,6 +27,7 @@ export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProp
         body: {
             path: filename,
         },
+        maxSteps: 5,
     });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);

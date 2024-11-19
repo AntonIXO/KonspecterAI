@@ -1,11 +1,25 @@
 import type { NextConfig } from "next";
+import withSerwistConfig from "@serwist/next";
+
+const withSerwist = withSerwistConfig({
+  swSrc: "src/app/sw.ts",
+  swDest: "public/sw.js",
+  // disable: process.env.NODE_ENV === 'development',
+  cacheOnNavigation: true,
+  reloadOnOnline: true,
+  register: true,
+});
 
 const nextConfig: NextConfig = {
   output: 'standalone',
-  compress: false, // brotli compression is handled by nginx
+  compress: false,
   experimental: {
-    cssChunking: 'loose', // default
+    cssChunking: 'loose',
   },
+  // webpack(config) {
+  //   config.infrastructureLogging = { debug: /PackFileCache/ }
+  //   return config;
+  // },
   async headers() {
     return [
       {
@@ -42,4 +56,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSerwist(nextConfig);

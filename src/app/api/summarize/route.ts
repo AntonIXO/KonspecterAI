@@ -54,11 +54,13 @@ export async function POST(request: Request) {
     system: prefix,
     messages: coreMessages,
     experimental_continueSteps: true,
+    experimental_toolCallStreaming: true,
+    maxSteps: 5,
     experimental_telemetry: {
       isEnabled: false,
       functionId: "summarize-text",
     },
-    maxSteps: 3,
+    
     tools: {
       getInformation: tool({
         description: `get information from your knowledge base to answer questions.`,
