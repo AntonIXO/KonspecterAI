@@ -67,7 +67,7 @@ export default function RootLayout({
                     {children}
                   </div>
                 </main>
-                <div className="fixed bottom-4 right-4 flex gap-2">
+                <div className="fixed bottom-4 right-4 flex flex-col gap-2 sm:flex-row">
                   <ThemeToggle />
                   <InstallPWA />
                 </div>

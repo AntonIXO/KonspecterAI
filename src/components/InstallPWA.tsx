@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Download } from 'lucide-react';
+import ShinyButton from './ui/shiny-button';
+// import { Download } from 'lucide-react';
 
 // Define the BeforeInstallPromptEvent interface
 interface BeforeInstallPromptEvent extends Event {
@@ -49,13 +49,11 @@ export function InstallPWA() {
   if (!showInstallButton) return null;
 
   return (
-    <Button
+    <ShinyButton
       onClick={handleInstallClick}
-      variant="outline"
-      className="fixed bottom-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-700 hover:scale-105 transition-transform"
+      className="fixed bottom-4 right-4 z-50"
     >
-      <Download className="mr-2 h-4 w-4 animate-bounce" />
       Install App
-    </Button>
+    </ShinyButton>
   );
 } 
