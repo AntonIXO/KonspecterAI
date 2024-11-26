@@ -10,6 +10,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useFile } from "@/lib/FileContext";
 import { cn } from "@/lib/utils";
 import { useText } from '@/lib/TextContext';
+import { ChromeAINotice } from "./ChromeAINotice";
 
 interface SummaryProps {
     open: boolean;
@@ -82,108 +83,111 @@ export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProp
     };
 
     return (
-        <Drawer open={open} onOpenChange={handleClose}>
-            <DrawerContent className="max-h-[95dvh] md:max-h-[90vh] flex flex-col">
-                <DrawerHeader className="flex-shrink-0">
-                    <DrawerTitle className="flex items-center gap-2">
-                        <MessageSquare className="w-5 h-5" />
-                        {selectedText ? "Selected Text Summary" : "Page Summary"}
-                    </DrawerTitle>
-                </DrawerHeader>
-                
-                <div className="flex-1 overflow-y-auto p-4 min-h-0">
-                    {messages
-                        .filter(message => !(message.content.startsWith("I want to")))
-                        .map((message) => (
-                            <div
-                                key={message.id}
-                                className={`mb-4 flex flex-col ${
-                                    message.role === 'user' ? 'items-end' : 'items-start'
-                                }`}
-                            >
+        <>
+            <ChromeAINotice />
+            <Drawer open={open} onOpenChange={handleClose}>
+                <DrawerContent className="max-h-[95dvh] md:max-h-[90vh] flex flex-col">
+                    <DrawerHeader className="flex-shrink-0">
+                        <DrawerTitle className="flex items-center gap-2">
+                            <MessageSquare className="w-5 h-5" />
+                            {selectedText ? "Selected Text Summary" : "Page Summary"}
+                        </DrawerTitle>
+                    </DrawerHeader>
+                    
+                    <div className="flex-1 overflow-y-auto p-4 min-h-0">
+                        {messages
+                            .filter(message => !(message.content.startsWith("I want to")))
+                            .map((message) => (
                                 <div
-                                    className={cn(
-                                        "rounded-lg px-4 py-2 max-w-[80%]",
-                                        "bg-muted",
-                                        "select-text cursor-text",
-                                        "hover:bg-muted/80 transition-colors"
-                                    )}
+                                    key={message.id}
+                                    className={`mb-4 flex flex-col ${
+                                        message.role === 'user' ? 'items-end' : 'items-start'
+                                    }`}
                                 >
-                                    <div className="prose prose-sm dark:prose-invert">
-                                        <ReactMarkdown 
-                                            components={{
-                                                code: ({ ...props }) => (
-                                                    <code className="select-text" {...props} />
-                                                ),
-                                                p: ({ ...props }) => (
-                                                    <p className="select-text" {...props} />
-                                                )
-                                            }}
-                                        >
-                                            {message.content}
-                                        </ReactMarkdown>
+                                    <div
+                                        className={cn(
+                                            "rounded-lg px-4 py-2 max-w-[80%]",
+                                            "bg-muted",
+                                            "select-text cursor-text",
+                                            "hover:bg-muted/80 transition-colors"
+                                        )}
+                                    >
+                                        <div className="prose prose-sm dark:prose-invert">
+                                            <ReactMarkdown 
+                                                components={{
+                                                    code: ({ ...props }) => (
+                                                        <code className="select-text" {...props} />
+                                                    ),
+                                                    p: ({ ...props }) => (
+                                                        <p className="select-text" {...props} />
+                                                    )
+                                                }}
+                                            >
+                                                {message.content}
+                                            </ReactMarkdown>
+                                        </div>
                                     </div>
                                 </div>
+                            ))}
+                        
+                        {isLoading && (
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-[30%]" />
+                                <Skeleton className="h-4 w-[40%]" />
                             </div>
-                        ))}
-                    
-                    {isLoading && (
-                        <div className="space-y-2">
-                            <Skeleton className="h-4 w-[30%]" />
-                            <Skeleton className="h-4 w-[40%]" />
-                        </div>
-                    )}
-                    
-                    <div ref={messagesEndRef} />
-                </div>
-
-                <div className="p-4 border-t flex-shrink-0">
-                    <form onSubmit={handleMessageSubmit} className="flex gap-2">
-                        <Input
-                            value={input}
-                            onChange={handleInputChange}
-                            placeholder="Ask a follow-up question..."
-                            className="flex-1"
-                            disabled={isLoading}
-                        />
-                        {isLoading ? (
-                            <Button 
-                                type="button" 
-                                onClick={() => stop()}
-                                variant="destructive"
-                            >
-                                <StopCircle className="w-4 h-4" />
-                            </Button>
-                        ) : (
-                            <Button 
-                                type="submit" 
-                                disabled={!input.trim()}
-                            >
-                                <Send className="w-4 h-4" />
-                            </Button>
                         )}
-                    </form>
-                </div>
+                        
+                        <div ref={messagesEndRef} />
+                    </div>
 
-                <DrawerFooter className="flex flex-row gap-2 flex-shrink-0">
-                    <Button 
-                        onClick={() => handleSave(getAllAnswers())}
-                        className="flex items-center gap-2"
-                        disabled={isLoading || messages.length === 0}
-                    >
-                        <Save className="w-4 h-4" />
-                        Save
-                    </Button>
-                    <Button 
-                        variant="outline" 
-                        onClick={handleClose}
-                        className="flex items-center gap-2"
-                    >
-                        <X className="w-4 h-4" />
-                        Close
-                    </Button>
-                </DrawerFooter>
-            </DrawerContent>
-        </Drawer>
+                    <div className="p-4 border-t flex-shrink-0">
+                        <form onSubmit={handleMessageSubmit} className="flex gap-2">
+                            <Input
+                                value={input}
+                                onChange={handleInputChange}
+                                placeholder="Ask a follow-up question..."
+                                className="flex-1"
+                                disabled={isLoading}
+                            />
+                            {isLoading ? (
+                                <Button 
+                                    type="button" 
+                                    onClick={() => stop()}
+                                    variant="destructive"
+                                >
+                                    <StopCircle className="w-4 h-4" />
+                                </Button>
+                            ) : (
+                                <Button 
+                                    type="submit" 
+                                    disabled={!input.trim()}
+                                >
+                                    <Send className="w-4 h-4" />
+                                </Button>
+                            )}
+                        </form>
+                    </div>
+
+                    <DrawerFooter className="flex flex-row gap-2 flex-shrink-0">
+                        <Button 
+                            onClick={() => handleSave(getAllAnswers())}
+                            className="flex items-center gap-2"
+                            disabled={isLoading || messages.length === 0}
+                        >
+                            <Save className="w-4 h-4" />
+                            Save
+                        </Button>
+                        <Button 
+                            variant="outline" 
+                            onClick={handleClose}
+                            className="flex items-center gap-2"
+                        >
+                            <X className="w-4 h-4" />
+                            Close
+                        </Button>
+                    </DrawerFooter>
+                </DrawerContent>
+            </Drawer>
+        </>
     );
 }

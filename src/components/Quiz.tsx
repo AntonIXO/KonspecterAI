@@ -28,6 +28,7 @@ import { useRouter } from "next/navigation"
 import { RainbowButton } from "./ui/rainbow-button"
 import { useFile } from "@/lib/FileContext"
 import { useText } from '@/lib/TextContext';
+import { ChromeAINotice } from "./ChromeAINotice";
 
 interface Question {
   question: string
@@ -184,242 +185,248 @@ export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizPro
 
   if (standalone) {
     return (
-      <div className="w-full max-w-4xl mx-auto bg-card p-8 rounded-lg shadow-lg">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2">Quiz</h1>
-          <p className="text-muted-foreground">
-            Test your knowledge of the selected text
-          </p>
-        </div>
+      <>
+        <ChromeAINotice />
+        <div className="w-full max-w-4xl mx-auto bg-card p-8 rounded-lg shadow-lg">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold mb-2">Quiz</h1>
+            <p className="text-muted-foreground">
+              Test your knowledge of the selected text
+            </p>
+          </div>
 
-        <div className="space-y-8">
-          {loading && (
-            <div className="space-y-6">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="space-y-3">
-                  <Skeleton className="h-6 w-3/4" />
-                  <div className="space-y-3">
-                    {[...Array(4)].map((_, j) => (
-                      <Skeleton key={j} className="h-4 w-1/2" />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {questions.map((question, qIndex) => (
-            <div key={qIndex} className="pb-6 border-b last:border-0">
-              <div className="flex items-start justify-between mb-4">
-                <p className="text-lg font-medium">{`${qIndex + 1}. ${question.question}`}</p>
-                {showResults && (
-                  <div className="ml-4 mt-1">
-                    {userAnswers[qIndex] === question.correctAnswer ? (
-                      <Check className="h-6 w-6 text-green-500" />
-                    ) : (
-                      <X className="h-6 w-6 text-red-500" />
-                    )}
-                  </div>
-                )}
-              </div>
-              <RadioGroup
-                value={userAnswers[qIndex]?.toString()}
-                onValueChange={(value) => handleAnswerSelect(qIndex, parseInt(value))}
-                className="space-y-3"
-              >
-                {question.options.map((option, oIndex) => (
-                  <div key={oIndex} className="flex items-center space-x-3">
-                    <RadioGroupItem
-                      value={oIndex.toString()}
-                      id={`q${qIndex}-o${oIndex}`}
-                      disabled={showResults}
-                      className="h-5 w-5"
-                    />
-                    <Label 
-                      htmlFor={`q${qIndex}-o${oIndex}`}
-                      className={`text-base ${
-                        showResults
-                          ? oIndex === question.correctAnswer
-                            ? "text-green-500 font-medium"
-                            : userAnswers[qIndex] === oIndex
-                            ? "text-red-500 line-through"
-                            : ""
-                          : ""
-                      }`}
-                    >
-                      {option}
-                    </Label>
+          <div className="space-y-8">
+            {loading && (
+              <div className="space-y-6">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="space-y-3">
+                    <Skeleton className="h-6 w-3/4" />
+                    <div className="space-y-3">
+                      {[...Array(4)].map((_, j) => (
+                        <Skeleton key={j} className="h-4 w-1/2" />
+                      ))}
+                    </div>
                   </div>
                 ))}
-              </RadioGroup>
-              {showResults && userAnswers[qIndex] !== question.correctAnswer && (
-                <p className="text-sm text-muted-foreground mt-3">
-                  Correct answer: {question.options[question.correctAnswer]}
-                </p>
-              )}
-            </div>
-          ))}
+              </div>
+            )}
 
-          {showResults && (
-            <div className="p-6 bg-muted rounded-lg dark:bg-muted/50">
-              <p className="text-center text-lg font-medium">
-                Your score: {score} out of {questions.length}
-                {score === questions.length && (
-                  <span className="block text-green-500 mt-2 text-xl">Perfect Score! 🎉</span>
+            {questions.map((question, qIndex) => (
+              <div key={qIndex} className="pb-6 border-b last:border-0">
+                <div className="flex items-start justify-between mb-4">
+                  <p className="text-lg font-medium">{`${qIndex + 1}. ${question.question}`}</p>
+                  {showResults && (
+                    <div className="ml-4 mt-1">
+                      {userAnswers[qIndex] === question.correctAnswer ? (
+                        <Check className="h-6 w-6 text-green-500" />
+                      ) : (
+                        <X className="h-6 w-6 text-red-500" />
+                      )}
+                    </div>
+                  )}
+                </div>
+                <RadioGroup
+                  value={userAnswers[qIndex]?.toString()}
+                  onValueChange={(value) => handleAnswerSelect(qIndex, parseInt(value))}
+                  className="space-y-3"
+                >
+                  {question.options.map((option, oIndex) => (
+                    <div key={oIndex} className="flex items-center space-x-3">
+                      <RadioGroupItem
+                        value={oIndex.toString()}
+                        id={`q${qIndex}-o${oIndex}`}
+                        disabled={showResults}
+                        className="h-5 w-5"
+                      />
+                      <Label 
+                        htmlFor={`q${qIndex}-o${oIndex}`}
+                        className={`text-base ${
+                          showResults
+                            ? oIndex === question.correctAnswer
+                              ? "text-green-500 font-medium"
+                              : userAnswers[qIndex] === oIndex
+                              ? "text-red-500 line-through"
+                              : ""
+                            : ""
+                        }`}
+                      >
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+                {showResults && userAnswers[qIndex] !== question.correctAnswer && (
+                  <p className="text-sm text-muted-foreground mt-3">
+                    Correct answer: {question.options[question.correctAnswer]}
+                  </p>
                 )}
-              </p>
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
 
-        <div className="mt-8 flex justify-center">
-          {questions.length > 0 && !showResults && (
-            <Button 
-              size="lg"
-              onClick={checkAnswers}
-              className="px-8 transition-opacity duration-300"
-            >
-              Check Answers
-            </Button>
-          )}
-          {questions.length > 0 && showResults && (
-            <RainbowButton
-              onClick={() => router.push('/landing')}
-              className="group transition-all duration-300 hover:scale-105"
-            >
-              <span className="flex items-center gap-2">
-                Get more about Konspecter
-                <Zap className="transition-transform group-hover:rotate-12" />
-              </span>
-            </RainbowButton>
-          )}
+            {showResults && (
+              <div className="p-6 bg-muted rounded-lg dark:bg-muted/50">
+                <p className="text-center text-lg font-medium">
+                  Your score: {score} out of {questions.length}
+                  {score === questions.length && (
+                    <span className="block text-green-500 mt-2 text-xl">Perfect Score! 🎉</span>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="mt-8 flex justify-center">
+            {questions.length > 0 && !showResults && (
+              <Button 
+                size="lg"
+                onClick={checkAnswers}
+                className="px-8 transition-opacity duration-300"
+              >
+                Check Answers
+              </Button>
+            )}
+            {questions.length > 0 && showResults && (
+              <RainbowButton
+                onClick={() => router.push('/landing')}
+                className="group transition-all duration-300 hover:scale-105"
+              >
+                <span className="flex items-center gap-2">
+                  Get more about Konspecter
+                  <Zap className="transition-transform group-hover:rotate-12" />
+                </span>
+              </RainbowButton>
+            )}
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle>Quiz</DialogTitle>
-          <DialogDescription>
-            Test your knowledge of the selected text
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <ChromeAINotice />
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Quiz</DialogTitle>
+            <DialogDescription>
+              Test your knowledge of the selected text
+            </DialogDescription>
+          </DialogHeader>
 
-        {questions.length > 0 && (
-          <div className="absolute right-4 top-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <Share2 className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={handleSave}>
-                  Save Quiz
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleShare}>
-                  Share Quiz
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
-
-        <div className="h-[400px] overflow-y-auto pr-4">
-          {loading && (
-            <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="space-y-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <div className="space-y-2">
-                    {[...Array(4)].map((_, j) => (
-                      <Skeleton key={j} className="h-3 w-1/2" />
-                    ))}
-                  </div>
-                </div>
-              ))}
+          {questions.length > 0 && (
+            <div className="absolute right-4 top-4">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleSave}>
+                    Save Quiz
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleShare}>
+                    Share Quiz
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
 
-          {questions.map((question, qIndex) => (
-            <div key={qIndex} className="mb-6">
-              <div className="flex items-start justify-between mb-3">
-                <p className="font-medium">{`${qIndex + 1}. ${question.question}`}</p>
-                {showResults && (
-                  <div className="ml-2 mt-1">
-                    {userAnswers[qIndex] === question.correctAnswer ? (
-                      <Check className="h-5 w-5 text-green-500" />
-                    ) : (
-                      <X className="h-5 w-5 text-red-500" />
-                    )}
-                  </div>
-                )}
-              </div>
-              <RadioGroup
-                value={userAnswers[qIndex]?.toString()}
-                onValueChange={(value) => handleAnswerSelect(qIndex, parseInt(value))}
-              >
-                {question.options.map((option, oIndex) => (
-                  <div key={oIndex} className="flex items-center space-x-2 mb-2">
-                    <RadioGroupItem
-                      value={oIndex.toString()}
-                      id={`q${qIndex}-o${oIndex}`}
-                      disabled={showResults}
-                    />
-                    <Label 
-                      htmlFor={`q${qIndex}-o${oIndex}`}
-                      className={
-                        showResults
-                          ? oIndex === question.correctAnswer
-                            ? "text-green-500 font-medium"
-                            : userAnswers[qIndex] === oIndex
-                            ? "text-red-500 line-through"
-                            : ""
-                          : ""
-                      }
-                    >
-                      {option}
-                    </Label>
+          <div className="h-[400px] overflow-y-auto pr-4">
+            {loading && (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <div className="space-y-2">
+                      {[...Array(4)].map((_, j) => (
+                        <Skeleton key={j} className="h-3 w-1/2" />
+                      ))}
+                    </div>
                   </div>
                 ))}
-              </RadioGroup>
-              {showResults && userAnswers[qIndex] !== question.correctAnswer && (
-                <p className="text-sm text-muted-foreground mt-2">
-                  Correct answer: {question.options[question.correctAnswer]}
-                </p>
-              )}
-            </div>
-          ))}
+              </div>
+            )}
 
-          {showResults && (
-            <div className="mt-4 p-4 bg-muted rounded-lg dark:bg-muted/50">
-              <p className="text-center font-medium">
-                Your score: {score} out of {questions.length}
-                {score === questions.length && (
-                  <span className="block text-green-500 mt-1">Perfect Score! 🎉</span>
+            {questions.map((question, qIndex) => (
+              <div key={qIndex} className="mb-6">
+                <div className="flex items-start justify-between mb-3">
+                  <p className="font-medium">{`${qIndex + 1}. ${question.question}`}</p>
+                  {showResults && (
+                    <div className="ml-2 mt-1">
+                      {userAnswers[qIndex] === question.correctAnswer ? (
+                        <Check className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <X className="h-5 w-5 text-red-500" />
+                      )}
+                    </div>
+                  )}
+                </div>
+                <RadioGroup
+                  value={userAnswers[qIndex]?.toString()}
+                  onValueChange={(value) => handleAnswerSelect(qIndex, parseInt(value))}
+                >
+                  {question.options.map((option, oIndex) => (
+                    <div key={oIndex} className="flex items-center space-x-2 mb-2">
+                      <RadioGroupItem
+                        value={oIndex.toString()}
+                        id={`q${qIndex}-o${oIndex}`}
+                        disabled={showResults}
+                      />
+                      <Label 
+                        htmlFor={`q${qIndex}-o${oIndex}`}
+                        className={
+                          showResults
+                            ? oIndex === question.correctAnswer
+                              ? "text-green-500 font-medium"
+                              : userAnswers[qIndex] === oIndex
+                              ? "text-red-500 line-through"
+                              : ""
+                            : ""
+                        }
+                      >
+                        {option}
+                      </Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+                {showResults && userAnswers[qIndex] !== question.correctAnswer && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Correct answer: {question.options[question.correctAnswer]}
+                  </p>
                 )}
-              </p>
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
 
-        <DialogFooter className="flex justify-between">
-          {questions.length > 0 && !showResults && (
-            <Button onClick={checkAnswers}>Check Answers</Button>
-          )}
-          {questions.length > 0 && showResults && (
-            <Button onClick={() => {
-              const textToQuiz = Object.values(pagesContent).join('\n\n');
-              handleGenerateQuiz(textToQuiz);
-            }}>
-              Try New Quiz
-            </Button>
-          )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            {showResults && (
+              <div className="mt-4 p-4 bg-muted rounded-lg dark:bg-muted/50">
+                <p className="text-center font-medium">
+                  Your score: {score} out of {questions.length}
+                  {score === questions.length && (
+                    <span className="block text-green-500 mt-1">Perfect Score! 🎉</span>
+                  )}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="flex justify-between">
+            {questions.length > 0 && !showResults && (
+              <Button onClick={checkAnswers}>Check Answers</Button>
+            )}
+            {questions.length > 0 && showResults && (
+              <Button onClick={() => {
+                const textToQuiz = Object.values(pagesContent).join('\n\n');
+                handleGenerateQuiz(textToQuiz);
+              }}>
+                Try New Quiz
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 } 
