@@ -117,7 +117,11 @@ export default function Home() {
     
     try {
       // Upload file to storage
-      const updatedBooks = await uploadFile(file, user.id)
+      const updatedBooks = await uploadFile(file, user.id);
+      if (!updatedBooks) {
+        setIsUploading(false);
+        return;
+      }
       setUploadProgress(30);
       
       // Generate embeddings for text content
