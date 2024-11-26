@@ -28,7 +28,7 @@ export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProp
         body: {
             path: filename,
         },
-        maxSteps: 5,
+        maxSteps: 3,
     });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -43,26 +43,26 @@ export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProp
 
     useEffect(() => {
         if (open) {
-            // setMessages([]); // Clear previous messages
             const startChat = async () => {
                 try {
-                    const textToSummarize = selectedText || Object.values(pagesContent).join('\n\n');
-                    
-                    await append({
-                        role: 'user',
-                        content: `I want to discuss this text: ${textToSummarize}`
-                    });
+                    if (messages.length === 0) {
+                        const textToSummarize = selectedText || Object.values(pagesContent).join('\n\n');
+                        
+                        await append({
+                            role: 'user',
+                            content: `I want to discuss this text: ${textToSummarize}`
+                        });
+                    }
                 } catch (error) {
                     console.error("Error starting chat:", error);
                 }
             };
             startChat();
         }
-    }, [open, selectedText, pagesContent, append, setMessages]);
+    }, [open, selectedText, pagesContent, append, messages]);
 
     const handleClose = useCallback(() => {
         stop(); // Cancel any ongoing requests
-        setMessages([]); // Clear messages
         setOpen(false); // Close the drawer
     }, [stop, setMessages, setOpen]);
 
@@ -83,7 +83,6 @@ export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProp
     };
 
     return (
-            
             <Drawer open={open} onOpenChange={handleClose}>
                 <DrawerContent className="max-h-[95dvh] md:max-h-[90vh] flex flex-col">
                     <DrawerHeader className="flex-shrink-0">
