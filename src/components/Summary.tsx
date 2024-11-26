@@ -10,7 +10,6 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useFile } from "@/lib/FileContext";
 import { cn } from "@/lib/utils";
 import { useText } from '@/lib/TextContext';
-import { ChromeAINotice } from "./ChromeAINotice";
 
 interface SummaryProps {
     open: boolean;

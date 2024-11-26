@@ -28,7 +28,6 @@ import { useRouter } from "next/navigation"
 import { RainbowButton } from "./ui/rainbow-button"
 import { useFile } from "@/lib/FileContext"
 import { useText } from '@/lib/TextContext';
-import { ChromeAINotice } from "./ChromeAINotice";
 
 interface Question {
   question: string

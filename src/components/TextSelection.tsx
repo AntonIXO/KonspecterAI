@@ -82,7 +82,7 @@ export function TextSelection({ handleSummarize }: { handleSummarize: (text: str
     setSelection({ text: "", position: null });
     
     // Call handleSummarize with the selected text
-    await handleSummarize(text);
+    handleSummarize(text);
   };
 
   return (
