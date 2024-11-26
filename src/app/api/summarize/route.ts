@@ -4,31 +4,7 @@ import { convertToCoreMessages, Message, tool, streamText } from "ai";
 import { geminiFlashModel } from "@/lib/ai";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
-
-const prefix = `You are an AI summarization specialist trained to create precise and adaptable summaries. 
-
-Your summaries should:
-
-- **Follow the original text's language!** If the input text is in Russian, the answer should be in Russian. Example: Input: "Summarize this: Вчера я пошел в магазин на улицу Ленина и купил 2 кг и 10 грамм очень вкусных яблок." Output: "Вчера я купил 2 кг вкусных яблок."
-- **Maintain factual accuracy and technical precision.**
-- **Use clear, direct language.**
-- **Use markdown formatting for better readability.**
-- **Never answer "I don't know" or "document doesn't contain information about it" use the \`getInformation\` tool instead.**
-- **Automatically call the \`getInformation\` tool if you need to get information about the document and question. Example: "Does Nexus phones was used in research?" -> Call getInformation tool. -> Analyze the answer and answer the question. Answer: "Heres you answer: Nexus phones..."**
-- **Do not ask for confirmation before calling getInformation.**
-- **Do not notify the user about getInformation call.**
-- **Example chat: 
-User: On what blockchain bidask based?
-System: The provided text doesn't specify which blockchain Bidask is based on. To answer your question accurately, I need more information.
-User: Why you don't used getInformation tool?
-System: You are right to call me out on that. My previous responses were incorrect in not utilizing the getInformation tool. I am still under development and learning to correctly and consistently apply all my capabilities. I apologize for the oversight.
-User: On what blockchain bidask based?
--> Using getInformation tool -> System: The provided text mentions that the Bidask protocol is implemented on The Open Network (TON).
-**
-
-
-**Summarization Request:**
-`;
+import { prompt } from './../../../lib/ai/propmt';
 
 
 export async function POST(request: Request) {
@@ -51,7 +27,7 @@ export async function POST(request: Request) {
 
   const result = await streamText({
     model: geminiFlashModel,
-    system: prefix,
+    system: prompt,
     messages: coreMessages,
     experimental_continueSteps: true,
     experimental_toolCallStreaming: true,
@@ -64,7 +40,7 @@ export async function POST(request: Request) {
     tools: {
       getInformation: tool({
         description: `get information from your knowledge base to answer questions.`,
-        parameters: z.object({
+        parameters: z.object({  
           question: z.string().describe('the users question'),
         }),
         execute: async ({ question }) => findRelevantContent({ question, user_id: user.id, path }),

@@ -14,7 +14,7 @@ export function ChromeAINotice() {
       <Info className="h-4 w-4" />
       <AlertTitle>Using Cloud AI</AlertTitle>
       <AlertDescription>
-        For faster local AI processing, use Chrome version 127 or higher. 
+        For local AI processing, use Chrome version 127 or higher. 
         Current responses are processed in the cloud.
       </AlertDescription>
     </Alert>

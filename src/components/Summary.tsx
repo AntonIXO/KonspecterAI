@@ -43,7 +43,7 @@ export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProp
 
     useEffect(() => {
         if (open) {
-            setMessages([]); // Clear previous messages
+            // setMessages([]); // Clear previous messages
             const startChat = async () => {
                 try {
                     const textToSummarize = selectedText || Object.values(pagesContent).join('\n\n');
@@ -83,8 +83,7 @@ export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProp
     };
 
     return (
-        <>
-            <ChromeAINotice />
+            
             <Drawer open={open} onOpenChange={handleClose}>
                 <DrawerContent className="max-h-[95dvh] md:max-h-[90vh] flex flex-col">
                     <DrawerHeader className="flex-shrink-0">
@@ -187,7 +186,7 @@ export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProp
                         </Button>
                     </DrawerFooter>
                 </DrawerContent>
+                <ChromeAINotice />
             </Drawer>
-        </>
     );
 }

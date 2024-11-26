@@ -185,8 +185,6 @@ export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizPro
 
   if (standalone) {
     return (
-      <>
-        <ChromeAINotice />
         <div className="w-full max-w-4xl mx-auto bg-card p-8 rounded-lg shadow-lg">
           <div className="mb-8">
             <h1 className="text-2xl font-bold mb-2">Quiz</h1>
@@ -298,13 +296,10 @@ export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizPro
             )}
           </div>
         </div>
-      </>
     );
   }
 
   return (
-    <>
-      <ChromeAINotice />
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -426,7 +421,7 @@ export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizPro
             )}
           </DialogFooter>
         </DialogContent>
+        <ChromeAINotice/>
       </Dialog>
-    </>
   )
 } 
