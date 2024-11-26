@@ -421,7 +421,7 @@ export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizPro
             )}
           </DialogFooter>
         </DialogContent>
-        <ChromeAINotice/>
+        {/* <ChromeAINotice/> */}
       </Dialog>
   )
 } 

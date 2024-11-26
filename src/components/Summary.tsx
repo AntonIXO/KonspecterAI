@@ -185,7 +185,7 @@ export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProp
                         </Button>
                     </DrawerFooter>
                 </DrawerContent>
-                <ChromeAINotice />
+                {/* <ChromeAINotice /> */}
             </Drawer>
     );
 }

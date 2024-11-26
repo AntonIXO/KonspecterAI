@@ -276,6 +276,23 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
     }
   }
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.key === 'x') {
+        setChatOpen(true); // Open Summary
+      }
+      if (event.ctrlKey && event.key === 'q') {
+        setQuizOpen(true); // Open Quiz
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []); // Empty dependency array to set up once
+
   return (
     <>
       <Sidebar collapsible="icon" {...props}>

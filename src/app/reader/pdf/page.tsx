@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { useFile } from "@/lib/FileContext";
@@ -200,6 +200,9 @@ export default function PDFReader() {
                   onLoadSuccess={onDocumentLoadSuccess}
                   className="max-w-full pdf-container relative"
                   onItemClick={handleItemClick}
+                  options={useMemo(() => ({
+                    enableHWA: true,
+                  }), [])}
                 >
                   <Page
                     pageNumber={currentPage}
