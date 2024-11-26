@@ -1,7 +1,7 @@
 'use server';
 
 import { convertToCoreMessages, Message, tool, streamText } from "ai";
-import { geminiFlashModel } from "@/lib/ai";
+import { geminiProModel } from "@/lib/ai";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
 import { prompt } from './../../../lib/ai/propmt';
@@ -25,13 +25,13 @@ export async function POST(request: Request) {
     (message) => message.content.length > 0,
   );
 
-  const result = await streamText({
-    model: geminiFlashModel,
+  const result = streamText({
+    model: geminiProModel,
     system: prompt,
     messages: coreMessages,
     experimental_continueSteps: true,
     experimental_toolCallStreaming: true,
-    maxSteps: 5,
+    maxSteps: 3,
     experimental_telemetry: {
       isEnabled: false,
       functionId: "summarize-text",
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     tools: {
       getInformation: tool({
         description: `get information from your knowledge base to answer questions.`,
-        parameters: z.object({  
+        parameters: z.object({
           question: z.string().describe('the users question'),
         }),
         execute: async ({ question }) => findRelevantContent({ question, user_id: user.id, path }),
