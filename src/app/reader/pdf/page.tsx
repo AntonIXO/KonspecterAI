@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ReaderSidebar } from "@/components/reader-sidebar";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ZoomOut, ZoomIn } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useSwipeable } from "react-swipeable";
@@ -35,6 +35,7 @@ export default function PDFReader() {
   const [windowWidth, setWindowWidth] = useState<number>(maxWidth);
   const { pagesContent, setPageContent, clearContent } = useText();
   const [pdfDocument, setPdfDocument] = useState<any>(null);
+  const [scale, setScale] = useState<number>(1.0);
 
   useEffect(() => {
     if (!file) {
@@ -56,10 +57,16 @@ export default function PDFReader() {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
   }, []);
 
-  // Keyboard navigation
+  // Keyboard navigation and zoom
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      if (e.ctrlKey && (e.key === '=' || e.key === '+')) {
+        e.preventDefault(); // Prevent default browser zoom in
+        setScale((prev) => Math.min(prev + 0.1, 2.0)); // Zoom in
+      } else if (e.ctrlKey && e.key === '-') {
+        e.preventDefault(); // Prevent default browser zoom out
+        setScale((prev) => Math.max(prev - 0.1, 0.5)); // Zoom out
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         goToNextPage();
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         goToPrevPage();
@@ -206,7 +213,7 @@ export default function PDFReader() {
                 >
                   <Page
                     pageNumber={currentPage}
-                    width={windowWidth}
+                    width={windowWidth * scale}
                     className="mb-4"
                     renderTextLayer={true}
                     renderAnnotationLayer={true}
@@ -284,6 +291,30 @@ export default function PDFReader() {
         >
           Next
           <ChevronRight className="w-4 h-4 ml-2" />
+        </Button>
+
+        <div className="flex items-center gap-2 text-sm sm:text-base dark:text-gray-200">
+          <span className="flex items-center gap-2 whitespace-nowrap">
+            Scale: {Math.round(scale * 100)}%
+          </span>
+        </div>
+
+        <Button
+          onClick={() => setScale((prev) => Math.min(prev + 0.1, 2.0))} // Zoom in
+          variant="outline"
+          className="w-full sm:w-auto shadow-sm flex items-center gap-2"
+        >
+          <ZoomIn className="w-4 h-4" />
+          Zoom In
+        </Button>
+
+        <Button
+          onClick={() => setScale((prev) => Math.max(prev - 0.1, 0.5))} // Zoom out
+          variant="outline"
+          className="w-full sm:w-auto shadow-sm flex items-center gap-2"
+        >
+          <ZoomOut className="w-4 h-4" />
+          Zoom Out
         </Button>
       </div>
       <ReaderSidebar variant="floating" className="z-50"/>
