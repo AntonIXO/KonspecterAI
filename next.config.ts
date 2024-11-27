@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import withSerwistConfig from "@serwist/next";
+import MillionLint from "@million/lint";
 
 const withSerwist = withSerwistConfig({
   swSrc: "src/app/sw.ts",
@@ -11,7 +12,7 @@ const withSerwist = withSerwistConfig({
 });
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
+  // output: 'standalone',
   compress: false,
   experimental: {
     cssChunking: 'loose',
@@ -56,4 +57,5 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSerwist(nextConfig);
+export default MillionLint.next({ rsc: true, optimizeDOM: true,  })(withSerwist(nextConfig));
+// console.log(JSON.stringify(nextConfig, null, 2));

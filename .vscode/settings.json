@@ -21,5 +21,6 @@
   "[typescript]": {
     "editor.defaultFormatter": "vscode.typescript-language-features"
   },
-  "deno.enable": true
+  "deno.enable": true,
+  "millionLint.theme": "million"
 }
