@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo, memo } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { useFile } from "@/lib/FileContext";
@@ -12,8 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ReaderSidebar } from "@/components/reader-sidebar";
 import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import { ChevronLeft, ZoomOut, ZoomIn } from "lucide-react";
-import { ChevronRight } from "lucide-react";
+import { ChevronLeft, ZoomOut, ZoomIn, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useSwipeable } from "react-swipeable";
 import { useText } from '@/lib/TextContext';
@@ -24,6 +23,29 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 ).toString();
 
 const maxWidth = 1100;
+
+// Memoized PDFPage Component
+const PDFPage = memo(({ file, currentPage, windowWidth, scale, onItemClick, onLoadSuccess }) => {
+  return (
+    <Document
+      file={file}
+      onLoadSuccess={onLoadSuccess}
+      className="max-w-full pdf-container relative"
+      onItemClick={onItemClick}
+      options={useMemo(() => ({
+        enableHWA: true,
+      }), [])}
+    >
+      <Page
+        pageNumber={currentPage}
+        width={windowWidth * scale}
+        className="mb-4"
+        renderTextLayer={true}
+        renderAnnotationLayer={true}
+      />
+    </Document>
+  );
+});
 
 export default function PDFReader() {
   const router = useRouter();
@@ -47,12 +69,14 @@ export default function PDFReader() {
   }, [file, router]);
 
   // Setup reader
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+  const onDocumentLoadSuccess = useCallback(({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
-  };
+  }, []);
+
   const goToNextPage = useCallback(() => {
     setCurrentPage((prev) => (prev < (numPages || 1) ? prev + 1 : prev));
   }, [numPages]);
+
   const goToPrevPage = useCallback(() => {
     setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
   }, []);
@@ -87,7 +111,7 @@ export default function PDFReader() {
     if (typeof pageNumber === 'number') {
       setCurrentPage(pageNumber);
     } else {
-      const page = parseInt(pageNumber, 10);
+      const page = parseInt(pageNumber as string, 10);
       if (!isNaN(page)) {
         setCurrentPage(page);
       }
@@ -96,14 +120,14 @@ export default function PDFReader() {
 
   // Add useEffect to handle window width
   useEffect(() => {
-    setWindowWidth(Math.min(maxWidth, window.innerWidth - 32));
-    
-    const handleResize = () => {
+    const updateWidth = () => {
       setWindowWidth(Math.min(maxWidth, window.innerWidth - 32));
     };
 
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    updateWidth();
+
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
   // Add swipe handlers
@@ -132,7 +156,7 @@ export default function PDFReader() {
   // Initialize PDF document once when file changes
   useEffect(() => {
     if (!file) return;
-    
+
     const loadPdf = async () => {
       try {
         // Convert File to ArrayBuffer
@@ -185,6 +209,10 @@ export default function PDFReader() {
     Promise.all(pagesToExtract.map(pageNum => extractPageContent(pageNum)));
   }, [currentPage, numPages, pdfDocument, extractPageContent]);
 
+  const handlePageChange = useCallback((newPage: number) => {
+    setCurrentPage(newPage);
+  }, []);
+
   return (
     <div className="relative min-h-screen pb-[120px] sm:pb-[72px]">
       <div className={cn(
@@ -202,23 +230,14 @@ export default function PDFReader() {
           <Card className="w-full overflow-hidden bg-white">
             <CardContent className="p-2 sm:p-4 md:p-6">
               <div className="w-full flex flex-col items-center" {...swipeHandlers}>
-                <Document
+                <PDFPage
                   file={file}
-                  onLoadSuccess={onDocumentLoadSuccess}
-                  className="max-w-full pdf-container relative"
+                  currentPage={currentPage}
+                  windowWidth={windowWidth}
+                  scale={scale}
                   onItemClick={handleItemClick}
-                  options={useMemo(() => ({
-                    enableHWA: true,
-                  }), [])}
-                >
-                  <Page
-                    pageNumber={currentPage}
-                    width={windowWidth * scale}
-                    className="mb-4"
-                    renderTextLayer={true}
-                    renderAnnotationLayer={true}
-                  />
-                </Document>
+                  onLoadSuccess={onDocumentLoadSuccess}
+                />
               </div>
             </CardContent>
           </Card>
@@ -263,7 +282,7 @@ export default function PDFReader() {
                 if (e.key === 'Enter') {
                   const newPage = parseInt(inputValue);
                   if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
-                    setCurrentPage(newPage);
+                    handlePageChange(newPage);
                   } else {
                     setInputValue(String(currentPage));
                   }
@@ -272,7 +291,7 @@ export default function PDFReader() {
               onBlur={() => {
                 const newPage = parseInt(inputValue);
                 if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
-                  setCurrentPage(newPage);
+                  handlePageChange(newPage);
                 } else {
                   setInputValue(String(currentPage));
                 }

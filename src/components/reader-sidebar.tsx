@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { ChevronRight, Zap, LucideIcon, ScrollText, X, Brain } from "lucide-react"
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link"
 
@@ -62,12 +62,13 @@ const baseData: { aiFeatures: FeatureSection[] } = {
   ],
 }
 
-// Add type for props
-interface ReaderSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  onSummarizePage?: (type: 'short' | 'full') => void;
+// Modify the props interface to be more explicit
+interface ReaderSidebarProps {
+  className?: string;
 }
 
-export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
+// Memoize the entire component
+export const ReaderSidebar = React.memo(function ReaderSidebar({ className }: ReaderSidebarProps) {
   const [data, setData] = useState(baseData); // Initialize state with baseData
   const { state } = useSidebar();
   const { filename } = useFile();
@@ -93,7 +94,23 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
     }
   }, [state]);
 
-  // Fetch summaries and update 'Summaries' section
+  // Memoize data transformations
+  const transformedSummaryItems = useMemo(() => (summariesData: any[]) => 
+    summariesData.map((summary: any) => ({
+      title: summary.content.substring(0, 30) + '...',
+      url: `/summaries/${summary.id}`,
+      content: summary.content,
+    }))
+  , []);
+
+  const transformedQuizItems = useMemo(() => (quizzes: any[]) => 
+    quizzes.map((quiz: any) => ({
+      title: quiz.title,
+      url: `/quiz/${quiz.public_id}`,
+    }))
+  , []);
+
+  // Update the fetch effects to use memoized transformations
   useEffect(() => {
     const fetchSummaries = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -111,11 +128,7 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
         return
       }
 
-      const summaryItems = summariesData.map((summary: any) => ({
-        title: summary.content.substring(0, 30) + '...',
-        url: `/summaries/${summary.id}`,
-        content: summary.content,
-      }))
+      const summaryItems = transformedSummaryItems(summariesData);
       
       // Update the Summaries section in data
       setData(prev => ({
@@ -127,7 +140,7 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
       }));
     }
     fetchSummaries()
-  }, [supabase, filename])
+  }, [supabase, filename, transformedSummaryItems])
 
   // Fetch quizzes and update 'Quiz' section
   useEffect(() => {
@@ -144,10 +157,7 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
         return;
       }
 
-      const quizItems = quizzes.map((quiz: any) => ({
-        title: quiz.title,
-        url: `/quiz/${quiz.public_id}`,
-      }));
+      const quizItems = transformedQuizItems(quizzes);
 
       // Update the Quiz section in data
       setData(prev => ({
@@ -160,7 +170,7 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
     };
 
     fetchQuizzes();
-  }, [supabase, filename]);
+  }, [supabase, filename, transformedQuizItems]);
 
   const handleSaveSummary = async (text: string) => {
     try {
@@ -293,9 +303,33 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
     };
   }, []); // Empty dependency array to set up once
 
+  // Memoize the menu buttons
+  const menuButtons = useMemo(() => ({
+    chat: (
+      <SidebarMenuButton 
+        onClick={handleStartChat}
+        className="w-full justify-center bg-gradient-to-r from-blue-600 to-violet-500 text-white hover:from-blue-700 hover:to-violet-600"
+        tooltip="Chat with PDF"
+      >
+        <Zap />
+        <span className="group-data-[collapsible=icon]:hidden">Chat with PDF</span>
+      </SidebarMenuButton>
+    ),
+    quiz: (
+      <SidebarMenuButton 
+        onClick={handleStartQuiz}
+        className="w-full justify-center bg-gradient-to-r from-green-600 to-teal-500 text-white hover:from-green-700 hover:to-teal-600"
+        tooltip="Generate Quiz"
+      >
+        <Brain />
+        <span className="group-data-[collapsible=icon]:hidden">Generate Quiz</span>
+      </SidebarMenuButton>
+    )
+  }), []) // Empty dependency array since handlers are stable
+
   return (
     <>
-      <Sidebar collapsible="icon" {...props}>
+      <Sidebar collapsible="icon" className={className}>
         <SidebarHeader>
           <Link href="/">
             <div className="h-[52px] px-4 py-2 cursor-pointer">
@@ -306,28 +340,13 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
           </Link>
         </SidebarHeader>
         <SidebarContent>
-          {/* Big Summarize Button */}
           <SidebarGroup className="mb-4">
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleStartChat}
-                  className="w-full justify-center bg-gradient-to-r from-blue-600 to-violet-500 text-white hover:from-blue-700 hover:to-violet-600"
-                  tooltip="Chat with PDF"
-                >
-                  <Zap />
-                  <span className="group-data-[collapsible=icon]:hidden">Chat with PDF</span>
-                </SidebarMenuButton>
+                {menuButtons.chat}
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleStartQuiz}
-                  className="w-full justify-center bg-gradient-to-r from-green-600 to-teal-500 text-white hover:from-green-700 hover:to-teal-600"
-                  tooltip="Generate Quiz"
-                >
-                  <Brain />
-                  <span className="group-data-[collapsible=icon]:hidden">Generate Quiz</span>
-                </SidebarMenuButton>
+                {menuButtons.quiz}
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
@@ -428,4 +447,4 @@ export function ReaderSidebar({ ...props }: ReaderSidebarProps) {
       />
     </>
   )
-}
+})

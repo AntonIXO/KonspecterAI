@@ -51,3 +51,5 @@ supabase/.temp
 # Serwist
 public/sw*
 public/swe-worker*
+
+.million
