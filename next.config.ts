@@ -57,5 +57,5 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default MillionLint.next({ rsc: true, optimizeDOM: true,  })(withSerwist(nextConfig));
+export default MillionLint.next({ rsc: true, optimizeDOM: true, experimental: { stabilize: true } })(withSerwist(nextConfig));
 // console.log(JSON.stringify(nextConfig, null, 2));

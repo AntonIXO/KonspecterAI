@@ -1,5 +1,6 @@
 Use shadcn/ui, MagicUI components and lucide icons. Use tailwind css. Use Framer Motion for animations. Adopt for dark mode with next-themes.
-
+Use .ts typescript next and tailwind config.
+Use react memo and useMemo for optimizations.
 Adopt for mobile.
 
 Use skeleton for loading states.
@@ -10,4 +11,4 @@ Use bun instead of npm.
 
 Use createClient() from src/utils/supabase/client.ts and createServerClient() from src/utils/supabase/server.ts for supabase.
 
-Use .ts typescript next and tailwind config.
+

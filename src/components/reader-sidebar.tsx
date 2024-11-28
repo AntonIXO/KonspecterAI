@@ -65,10 +65,15 @@ const baseData: { aiFeatures: FeatureSection[] } = {
 // Modify the props interface to be more explicit
 interface ReaderSidebarProps {
   className?: string;
+  variant?: "sidebar" | "floating" | "inset"
 }
 
 // Memoize the entire component
-export const ReaderSidebar = React.memo(function ReaderSidebar({ className }: ReaderSidebarProps) {
+export const ReaderSidebar = React.memo(function ReaderSidebar({ 
+  className, 
+  variant = "sidebar",
+  ...props 
+}: ReaderSidebarProps) {
   const [data, setData] = useState(baseData); // Initialize state with baseData
   const { state } = useSidebar();
   const { filename } = useFile();
@@ -329,7 +334,12 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({ className }: Re
 
   return (
     <>
-      <Sidebar collapsible="icon" className={className}>
+      <Sidebar 
+        collapsible="icon" 
+        className={className}
+        variant={variant}
+        {...props}
+      >
         <SidebarHeader>
           <Link href="/">
             <div className="h-[52px] px-4 py-2 cursor-pointer">

@@ -24,8 +24,25 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 const maxWidth = 1100;
 
-// Memoized PDFPage Component
-const PDFPage = memo(({ file, currentPage, windowWidth, scale, onItemClick, onLoadSuccess }) => {
+// Add interface for PDFPage props
+interface PDFPageProps {
+  file: File;
+  currentPage: number;
+  windowWidth: number;
+  scale: number;
+  onItemClick: ({ pageNumber }: { pageNumber: string | number }) => void;
+  onLoadSuccess: ({ numPages }: { numPages: number }) => void;
+}
+
+// Update the PDFPage component with proper typing and display name
+const PDFPage = memo<PDFPageProps>(({ 
+  file, 
+  currentPage, 
+  windowWidth, 
+  scale, 
+  onItemClick, 
+  onLoadSuccess 
+}) => {
   return (
     <Document
       file={file}
@@ -46,6 +63,9 @@ const PDFPage = memo(({ file, currentPage, windowWidth, scale, onItemClick, onLo
     </Document>
   );
 });
+
+// Add display name
+PDFPage.displayName = 'PDFPage';
 
 export default function PDFReader() {
   const router = useRouter();
@@ -212,6 +232,8 @@ export default function PDFReader() {
   const handlePageChange = useCallback((newPage: number) => {
     setCurrentPage(newPage);
   }, []);
+
+  if (!file) return null;
 
   return (
     <div className="relative min-h-screen pb-[120px] sm:pb-[72px]">
