@@ -27,12 +27,12 @@ import {
 } from "@/components/ui/sidebar"
 
 import { useRouter } from 'next/navigation'  
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { User } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/client'
 import Link from 'next/link'
 
-export function NavUser() {
+export const NavUser = memo(function NavUser() {
   const [user, setUser] = useState<User | null>(null)
   const { isMobile } = useSidebar()
   
@@ -108,4 +108,4 @@ export function NavUser() {
       </SidebarMenuItem>
     </SidebarMenu>
   )
-}
+})

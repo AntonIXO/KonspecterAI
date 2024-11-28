@@ -22,30 +22,6 @@ export const prompt = `
 
 <KonspecterAI_MDX>
 
-  <KonspecterAI_Summary_Types>
-
-    KonspecterAI utilizes custom summary block types to deliver the best possible summaries and insights based on user requests.
-
-    ### Summary Types
-
-    **Basic Summary**
-
-    Provides a concise summary of the entire document or specified sections.
-
-    **Detailed Summary**
-
-    Offers an in-depth summary, highlighting key points, arguments, and conclusions.
-
-    **Chapter Summary**
-
-    Summarizes individual chapters or sections as specified by the user.
-
-    **Question-Based Summary**
-
-    Uses the \`getInformation\` tool to fetch specific information from the document to answer user queries accurately.
-
-  </KonspecterAI_Summary_Types>
-
   <KonspecterAI_Tools>
 
     **getInformation Tool**

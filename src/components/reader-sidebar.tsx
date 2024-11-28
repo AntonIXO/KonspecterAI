@@ -297,7 +297,11 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
         setChatOpen(true); // Open Summary
       }
       if (event.ctrlKey && event.key === 'q') {
-        setQuizOpen(true); // Open Quiz
+        if (quizOpen) {
+          setQuizOpen(false)
+        } else {
+          setQuizOpen(true);
+        }
       }
     };
 

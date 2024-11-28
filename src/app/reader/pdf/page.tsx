@@ -32,6 +32,13 @@ interface PDFPageProps {
   scale: number;
   onItemClick: ({ pageNumber }: { pageNumber: string | number }) => void;
   onLoadSuccess: ({ numPages }: { numPages: number }) => void;
+  onPageLoadSuccess: (dimensions: PageDimensions) => void;
+}
+
+// Add new interface for page dimensions
+interface PageDimensions {
+  width: number;
+  height: number;
 }
 
 // Update the PDFPage component with proper typing and display name
@@ -41,7 +48,8 @@ const PDFPage = memo<PDFPageProps>(({
   windowWidth, 
   scale, 
   onItemClick, 
-  onLoadSuccess 
+  onLoadSuccess,
+  onPageLoadSuccess 
 }) => {
   return (
     <Document
@@ -59,6 +67,12 @@ const PDFPage = memo<PDFPageProps>(({
         className="mb-4"
         renderTextLayer={true}
         renderAnnotationLayer={true}
+        onLoadSuccess={(page) => {
+          onPageLoadSuccess({
+            width: page.width,
+            height: page.height
+          });
+        }}
       />
     </Document>
   );
@@ -78,6 +92,7 @@ export default function PDFReader() {
   const { pagesContent, setPageContent, clearContent } = useText();
   const [pdfDocument, setPdfDocument] = useState<any>(null);
   const [scale, setScale] = useState<number>(1.0);
+  const [pageDimensions, setPageDimensions] = useState<PageDimensions>({ width: 0, height: 0 });
 
   useEffect(() => {
     if (!file) {
@@ -110,9 +125,9 @@ export default function PDFReader() {
       } else if (e.ctrlKey && e.key === '-') {
         e.preventDefault(); // Prevent default browser zoom out
         setScale((prev) => Math.max(prev - 0.1, 0.5)); // Zoom out
-      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      } else if (e.key === 'ArrowRight') {
         goToNextPage();
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      } else if (e.key === 'ArrowLeft') {
         goToPrevPage();
       }
     };
@@ -249,7 +264,13 @@ export default function PDFReader() {
             </Button>
           </div>
 
-          <Card className="w-full overflow-hidden bg-white">
+          <Card 
+            className="w-full overflow-hidden bg-white dark:bg-gray-950"
+            style={{
+              height: pageDimensions.height > 0 ? `${pageDimensions.height * scale}px` : 'auto',
+              transition: 'height 0.2s ease-in-out'
+            }}
+          >
             <CardContent className="p-2 sm:p-4 md:p-6">
               <div className="w-full flex flex-col items-center" {...swipeHandlers}>
                 <PDFPage
@@ -259,6 +280,7 @@ export default function PDFReader() {
                   scale={scale}
                   onItemClick={handleItemClick}
                   onLoadSuccess={onDocumentLoadSuccess}
+                  onPageLoadSuccess={setPageDimensions}
                 />
               </div>
             </CardContent>
