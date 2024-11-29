@@ -4,7 +4,7 @@ import { convertToCoreMessages, Message, tool, streamText } from "ai";
 import { geminiProModel } from "@/lib/ai";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
-import { prompt } from './../../../lib/ai/propmt';
+import { prompt } from '../../../lib/ai/propmts';
 
 
 export async function POST(request: Request) {

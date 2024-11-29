@@ -48,11 +48,14 @@ interface PageDimensions {
 interface CompressedViewProps {
   content: string;
   isLoading: boolean;
+  streamingContent: string;
 }
 
 // Update CompressedView component
-const CompressedView = memo<CompressedViewProps>(({ content, isLoading }) => {
-  if (isLoading) {
+const CompressedView = memo<CompressedViewProps>(({ content, isLoading, streamingContent }) => {
+  const displayContent = streamingContent || content;
+  
+  if (isLoading && !displayContent) {
     return (
       <div className="w-full space-y-4 p-8">
         <Skeleton className="h-4 w-3/4" />
@@ -127,7 +130,7 @@ const CompressedView = memo<CompressedViewProps>(({ content, isLoading }) => {
           ),
         }}
       >
-        {content}
+        {displayContent}
       </ReactMarkdown>
     </div>
   );
@@ -187,6 +190,7 @@ export default function PDFReader() {
   const [pageDimensions, setPageDimensions] = useState<PageDimensions>({ width: 0, height: 0 });
   const [compressedContent, setCompressedContent] = useState<string>('');
   const [isCompressing, setIsCompressing] = useState(false);
+  const [streamingContent, setStreamingContent] = useState<string>('');
 
   useEffect(() => {
     if (!file) {
@@ -202,13 +206,53 @@ export default function PDFReader() {
     setNumPages(numPages);
   }, []);
 
+  // Extract page navigation logic into a single function
+  const calculatePageJump = useCallback((
+    currentPage: number, 
+    direction: 'next' | 'prev',
+    numPages: number | null,
+    compressionMode: string
+  ) => {
+    const jump = compressionMode === '1:3' ? 3 : 
+                 compressionMode === '1:2' ? 2 : 1;
+
+    if (direction === 'next') {
+      if (currentPage >= (numPages || 1)) return currentPage;
+      return Math.min(currentPage + jump, numPages || 1);
+    } else {
+      if (currentPage <= 1) return currentPage;
+      return Math.max(currentPage - jump, 1);
+    }
+  }, []);
+
+  // Simplified navigation handlers using the shared logic
   const goToNextPage = useCallback(() => {
-    setCurrentPage((prev) => (prev < (numPages || 1) ? prev + 1 : prev));
-  }, [numPages]);
+    setCurrentPage(prev => calculatePageJump(prev, 'next', numPages, compressionMode));
+  }, [numPages, compressionMode, calculatePageJump]);
 
   const goToPrevPage = useCallback(() => {
-    setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
-  }, []);
+    setCurrentPage(prev => calculatePageJump(prev, 'prev', numPages, compressionMode));
+  }, [numPages, compressionMode, calculatePageJump]);
+
+  // Update page input validation
+  const validateAndSetPage = useCallback((newPage: number) => {
+    if (isNaN(newPage) || newPage < 1 || newPage > (numPages || 1)) {
+      setInputValue(String(currentPage));
+      return;
+    }
+
+    // Ensure the page aligns with compression mode
+    if (compressionMode !== '1:1') {
+      const jump = compressionMode === '1:3' ? 3 : 2;
+      // Round to nearest valid page number based on jump size
+      const alignedPage = Math.ceil(newPage / jump) * jump - (jump - 1);
+      setCurrentPage(Math.min(alignedPage, numPages || 1));
+      setInputValue(String(alignedPage));
+    } else {
+      setCurrentPage(newPage);
+      setInputValue(String(newPage));
+    }
+  }, [currentPage, numPages, compressionMode]);
 
   // Keyboard navigation and zoom
   useEffect(() => {
@@ -349,18 +393,31 @@ export default function PDFReader() {
     const compressCurrentPage = async () => {
       if (!pagesContent[currentPage] || compressionMode === '1:1') {
         setCompressedContent('');
+        setStreamingContent('');
         return;
       }
 
       setIsCompressing(true);
+      setStreamingContent(''); // Reset streaming content
+      
       try {
-        const summary = await summarizeWithChromeAI(
-          pagesContent[currentPage],
+        const result = await summarizeWithChromeAI(
+          compressionMode === '1:2' 
+            ? pagesContent[currentPage] + pagesContent[currentPage + 1]
+            : pagesContent[currentPage] + pagesContent[currentPage + 2],
           compressionMode
         );
-        
-        if (isMounted && summary) {
-          setCompressedContent(summary);
+
+        if (result?.stream) {
+          let fullContent = '';
+          for await (const chunk of result.stream()) {
+            if (!isMounted) break;
+            fullContent += chunk;
+            setStreamingContent(fullContent);
+          }
+          if (isMounted) {
+            setCompressedContent(fullContent);
+          }
         }
       } catch (error) {
         console.error('Compression error:', error);
@@ -418,6 +475,7 @@ export default function PDFReader() {
                   <CompressedView 
                     content={compressedContent}
                     isLoading={isCompressing}
+                    streamingContent={streamingContent}
                   />
                 )}
               </div>

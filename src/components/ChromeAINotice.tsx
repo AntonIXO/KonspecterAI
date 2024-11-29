@@ -2,7 +2,7 @@
 
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import { Info } from "lucide-react";
-import { isChromeAIAvailable } from "@/lib/chrome-ai";
+import { isChromeAIAvailable } from "@/lib/ai/chrome-ai";
 
 export function ChromeAINotice() {
   const isCompatible = isChromeAIAvailable();

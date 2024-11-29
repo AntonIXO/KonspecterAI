@@ -21,6 +21,11 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
+const summarizerToken = process.env.SUMMARIZER_TOKEN;
+const translatorToken = process.env.TRANSLATOR_TOKEN;
+const languageDetectionToken = process.env.LANGUAGE_DETECTION_TOKEN;
+const genaiToken = process.env.GENAI_TOKEN;
+
 export const metadata: Metadata = {
   title: "KonspecterAI",
   description: "Read smarter, not harder",
@@ -49,6 +54,11 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="KonspecterAI" />
+        {/* Origin trials */}
+        <meta httpEquiv="origin-trial" content={summarizerToken}></meta> {/* Summarizer API */}
+        <meta httpEquiv="origin-trial" content={translatorToken}></meta> {/* Translator API */}
+        <meta httpEquiv="origin-trial" content={languageDetectionToken}></meta> {/* Language Detection API */}
+        <meta httpEquiv="origin-trial" content={genaiToken}></meta> {/* Gen AI */}
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
