@@ -152,7 +152,7 @@ export default function Home() {
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
         
         const BATCH_SIZE = 9; // Process 5 paragraphs concurrently
-        const DELAY_MS = 30;  // Delay between batches
+        const DELAY_MS = 40;  // Delay between batches
 
         // Helper function to process paragraphs in batches
         const processParagraphsBatch = async (paragraphs: string[], file: File) => {

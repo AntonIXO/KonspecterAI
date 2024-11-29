@@ -1,9 +1,8 @@
-import { generateText } from 'ai';
-import { chromeai } from 'chrome-ai';
 import { compressionPrompt } from '@/lib/ai/propmts';
+import { toast } from 'sonner';
 
 // Check if the Summarizer API is available in the browser
-const isSummarizerAvailable = () => {
+export const isSummarizerAvailable = () => {
   return 'ai' in window && 'summarizer' in (window as any).ai;
 };
 
@@ -17,6 +16,7 @@ export async function summarizeWithChromeAI(text: string, compressionMode: strin
     // Get capabilities
     const capabilities = await (window as any).ai.summarizer.capabilities();
     if (capabilities.available === 'no') {
+      toast.error('Summarizer API is not usable at the moment');
       throw new Error('Summarizer API is not usable at the moment');
     }
 

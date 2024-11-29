@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronRight, Zap, LucideIcon, ScrollText, X, Brain, ChevronDown, Bot, ScanFace, ZapOff, PlugZap } from "lucide-react"
+import { ChevronRight, Zap, LucideIcon, ScrollText, X, Brain, ChevronDown, Bot, ZapOff, PlugZap } from "lucide-react"
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link"
@@ -37,6 +37,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { isSummarizerAvailable } from '@/utils/chromeai';
 
 // Add proper type definitions
 type MenuItem = {
@@ -347,12 +348,20 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
   }), []) // Empty dependency array since handlers are stable
 
   // Add this memoized compression menu component
+  const [isSummarizerEnabled, setIsSummarizerEnabled] = useState(false);
+
+  useEffect(() => {
+    setIsSummarizerEnabled(isSummarizerAvailable());
+  }, []);
+
   const compressionMenu = useMemo(() => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <SidebarMenuButton 
-            className="w-full justify-between"
-            tooltip="Text Compression"
+            className="w-full justify-between group relative"
+            tooltip={isSummarizerEnabled ? "Text Compression" : "Your browser doesn't support local AI compression"}
+            isActive={isSummarizerEnabled}
+            disabled={!isSummarizerEnabled}
           >
             <div className="flex items-center">
               <Bot className="h-4 w-4" />
@@ -376,7 +385,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-  ), [compressionMode, setCompressionMode])
+  ), [compressionMode, setCompressionMode, isSummarizerEnabled])
 
   return (
     <>

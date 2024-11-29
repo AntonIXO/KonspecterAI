@@ -521,20 +521,12 @@ export default function PDFReader() {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   const newPage = parseInt(inputValue);
-                  if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
-                    handlePageChange(newPage);
-                  } else {
-                    setInputValue(String(currentPage));
-                  }
+                  validateAndSetPage(newPage);
                 }
               }}
               onBlur={() => {
                 const newPage = parseInt(inputValue);
-                if (!isNaN(newPage) && newPage >= 1 && newPage <= (numPages || 1)) {
-                  handlePageChange(newPage);
-                } else {
-                  setInputValue(String(currentPage));
-                }
+                validateAndSetPage(newPage);
               }}
               className="w-16 sm:w-20 text-center shadow-sm"
             />
@@ -543,7 +535,7 @@ export default function PDFReader() {
         </div>
 
         <Button
-          onClick={goToNextPage}
+          onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage >= (numPages || 1)}
           variant="outline"
           className="w-full sm:w-auto shadow-sm"
