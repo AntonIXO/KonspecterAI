@@ -57,5 +57,9 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default MillionLint.next({ rsc: true, optimizeDOM: true, experimental: { stabilize: true } })(withSerwist(nextConfig));
+const config = process.env.NODE_ENV === 'production'
+  ? MillionLint.next({ rsc: true, optimizeDOM: true, experimental: { stabilize: true } })(withSerwist(nextConfig))
+  : nextConfig;
+
+export default config;
 // console.log(JSON.stringify(nextConfig, null, 2));

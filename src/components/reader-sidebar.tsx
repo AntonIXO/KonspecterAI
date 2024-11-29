@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronRight, Zap, LucideIcon, ScrollText, X, Brain } from "lucide-react"
+import { ChevronRight, Zap, LucideIcon, ScrollText, X, Brain, ChevronDown, Bot, ScanFace, ZapOff, PlugZap } from "lucide-react"
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link"
@@ -31,6 +31,12 @@ import { Summary } from "./Summary";
 import { toast } from "sonner";
 import { Quiz } from "@/components/Quiz"
 import { useFile } from "@/lib/FileContext";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 // Add proper type definitions
 type MenuItem = {
@@ -75,7 +81,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
   ...props 
 }: ReaderSidebarProps) {
   const [data, setData] = useState(baseData); // Initialize state with baseData
-  const { state } = useSidebar();
+  const { state, compressionMode, setCompressionMode } = useSidebar();
   const { filename } = useFile();
 
   const supabase = createClient()
@@ -294,7 +300,11 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.key === 'x') {
-        setChatOpen(true); // Open Summary
+        if (chatOpen) {
+          setChatOpen(false)
+        } else {
+          setChatOpen(true);
+        }
       }
       if (event.ctrlKey && event.key === 'q') {
         if (quizOpen) {
@@ -336,6 +346,38 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
     )
   }), []) // Empty dependency array since handlers are stable
 
+  // Add this memoized compression menu component
+  const compressionMenu = useMemo(() => (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <SidebarMenuButton 
+            className="w-full justify-between"
+            tooltip="Text Compression"
+          >
+            <div className="flex items-center">
+              <Bot className="h-4 w-4" />
+              <span className="ml-2 group-data-[state=collapsed]:hidden">Compression: {compressionMode}</span>
+            </div>
+            <ChevronDown className="h-4 w-4 opacity-50" />
+          </SidebarMenuButton>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-[160px]">
+          <DropdownMenuItem onClick={() => setCompressionMode("1:1")} className="flex items-center">
+            <ZapOff className="h-4 w-4 mr-2" />
+            <span>Normal (1:1)</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setCompressionMode("1:2")} className="flex items-center">
+            <Zap className="h-4 w-4 mr-2" />
+            <span>Medium (1:2)</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setCompressionMode("1:3")} className="flex items-center">
+            <PlugZap className="h-4 w-4 mr-2" />
+            <span>High (1:3)</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+  ), [compressionMode, setCompressionMode])
+
   return (
     <>
       <Sidebar 
@@ -353,7 +395,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
             </div>
           </Link>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent>          
           <SidebarGroup className="mb-4">
             <SidebarMenu>
               <SidebarMenuItem>
@@ -432,6 +474,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
               ))}
             </SidebarMenu>
             <SidebarMenu>
+              {compressionMenu}
               {/* You can add more menu items or features here */}
             </SidebarMenu>
           </SidebarGroup>
