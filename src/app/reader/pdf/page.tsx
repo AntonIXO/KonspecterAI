@@ -16,7 +16,7 @@ import { ChevronLeft, ZoomOut, ZoomIn, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useSwipeable } from "react-swipeable";
 import { useText } from '@/lib/TextContext';
-import { summarizeWithChromeAI } from '@/utils/chromeai';
+import { compressWithChromeAI as compressWithChromeAI } from '@/utils/chromeai';
 import { Skeleton } from "@/components/ui/skeleton";
 import ReactMarkdown from "react-markdown";
 
@@ -213,15 +213,26 @@ export default function PDFReader() {
     numPages: number | null,
     compressionMode: string
   ) => {
+    // Calculate jump size based on compression mode
     const jump = compressionMode === '1:3' ? 3 : 
                  compressionMode === '1:2' ? 2 : 1;
 
     if (direction === 'next') {
       if (currentPage >= (numPages || 1)) return currentPage;
-      return Math.min(currentPage + jump, numPages || 1);
+      
+      // Calculate next page based on jump size
+      const nextPage = currentPage + jump;
+      
+      // Ensure we don't go past the last page
+      return Math.min(nextPage, numPages || 1);
     } else {
       if (currentPage <= 1) return currentPage;
-      return Math.max(currentPage - jump, 1);
+      
+      // Calculate previous page based on jump size
+      const prevPage = currentPage - jump;
+      
+      // Ensure we don't go below page 1
+      return Math.max(prevPage, 1);
     }
   }, []);
 
@@ -386,27 +397,46 @@ export default function PDFReader() {
     setCurrentPage(newPage);
   }, []);
 
-  // Add effect to handle compression
+  // Memoize the compression effect dependencies
+  const compressionDeps = useMemo(() => ({
+    pagesContent,
+    currentPage,
+    compressionMode,
+    numPages
+  }), [pagesContent, currentPage, compressionMode, numPages]);
+
+  // Update the compression effect
   useEffect(() => {
     let isMounted = true;
 
     const compressCurrentPage = async () => {
-      if (!pagesContent[currentPage] || compressionMode === '1:1') {
+      if (!compressionDeps.pagesContent[compressionDeps.currentPage] || 
+          compressionDeps.compressionMode === '1:1') {
         setCompressedContent('');
         setStreamingContent('');
         return;
       }
 
       setIsCompressing(true);
-      setStreamingContent(''); // Reset streaming content
+      setStreamingContent('');
       
       try {
-        const result = await summarizeWithChromeAI(
-          compressionMode === '1:2' 
-            ? pagesContent[currentPage] + pagesContent[currentPage + 1]
-            : pagesContent[currentPage] + pagesContent[currentPage + 2],
-          compressionMode
-        );
+        // Collect text from current and next pages based on compression mode
+        const pagesToCompress = [compressionDeps.currentPage];
+        if (compressionDeps.compressionMode === '1:2' && 
+            compressionDeps.currentPage + 1 <= (compressionDeps.numPages || 1)) {
+          pagesToCompress.push(compressionDeps.currentPage + 1);
+        } else if (compressionDeps.compressionMode === '1:3' && 
+                  compressionDeps.currentPage + 2 <= (compressionDeps.numPages || 1)) {
+          pagesToCompress.push(compressionDeps.currentPage + 1, compressionDeps.currentPage + 2);
+        }
+
+        // Combine text from all relevant pages
+        const textToCompress = pagesToCompress
+          .map(pageNum => compressionDeps.pagesContent[pageNum] || '')
+          .join('\n\n');
+
+        const result = await compressWithChromeAI(textToCompress, compressionDeps.compressionMode);
 
         if (result?.stream) {
           let fullContent = '';
@@ -432,7 +462,7 @@ export default function PDFReader() {
     return () => {
       isMounted = false;
     };
-  }, [pagesContent, currentPage, compressionMode]);
+  }, [compressionDeps]); // Now we only depend on the memoized object
 
   if (!file) return null;
 

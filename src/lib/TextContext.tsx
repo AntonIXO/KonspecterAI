@@ -6,6 +6,7 @@ interface TextContextType {
   pagesContent: { [pageNum: number]: string };
   setPageContent: (pageNum: number, content: string) => void;
   clearContent: () => void;
+  getPageRange: (startPage: number, endPage: number) => string;
 }
 
 const TextContext = createContext<TextContextType | undefined>(undefined);
@@ -45,8 +46,24 @@ export function TextProvider({ children }: { children: ReactNode }) {
     setPagesContent({});
   }, []);
 
+  // Add new method to get content from a range of pages
+  const getPageRange = useCallback((startPage: number, endPage: number): string => {
+    const pages = [];
+    for (let i = startPage; i <= endPage; i++) {
+      if (pagesContent[i]) {
+        pages.push(pagesContent[i]);
+      }
+    }
+    return pages.join('\n\n');
+  }, [pagesContent]);
+
   return (
-    <TextContext.Provider value={{ pagesContent, setPageContent, clearContent }}>
+    <TextContext.Provider value={{ 
+      pagesContent, 
+      setPageContent, 
+      clearContent,
+      getPageRange 
+    }}>
       {children}
     </TextContext.Provider>
   );

@@ -1,106 +1,142 @@
 import { compressionPrompt } from '@/lib/ai/propmts';
 import { toast } from 'sonner';
 
-// Check if the Summarizer API is available in the browser
-export const isSummarizerAvailable = () => {
-  return 'ai' in window && 'summarizer' in (window as any).ai;
+// Keep track of the active session
+let activeSession: any = null;
+let sessionInitPromise: Promise<any> | null = null;
+
+// Check if the Prompt API is available in the browser
+export const isPromptAPIAvailable = () => {
+  return 'chrome' in window && 
+         'self' in window &&
+         'ai' in (window as any).self;
 };
 
-export async function summarizeWithChromeAI(text: string, compressionMode: string) {
-  try {
-    // Check if the API is available
-    if (!isSummarizerAvailable()) {
-      throw new Error('Summarizer API is not available in this browser');
-    }
+// Initialize session if needed
+async function getOrCreateSession() {
+  // Return existing session if it's already initialized
+  if (activeSession) {
+    return activeSession;
+  }
 
-    // Get capabilities
-    const capabilities = await (window as any).ai.summarizer.capabilities();
-    if (capabilities.available === 'no') {
-      toast.error('Summarizer API is not usable at the moment');
-      throw new Error('Summarizer API is not usable at the moment');
-    }
+  // Return existing initialization promise if it's in progress
+  if (sessionInitPromise) {
+    return sessionInitPromise;
+  }
 
-    // Configure summarizer options based on compression mode
-    const options = {
-      type: 'tl;dr', // 'key-points' or 'tl;dr'
-      format: 'markdown', // markdown or plain text
-      length: 'long', // 1:3 uses long length. short/medium/long
-    //   sharedContext: compressionPrompt
-    };
-
-    // Create summarizer
-    const summarizer = await (window as any).ai.summarizer.create(options);
-
-    // Wait for the model to be ready if needed
-    if (capabilities.available === 'after-download') {
-      await new Promise((resolve) => {
-        summarizer.addEventListener('downloadprogress', (e: any) => {
-          console.log(`Downloading model: ${e.loaded}/${e.total} bytes`);
-          if (e.loaded === e.total) {
-            resolve(true);
-          }
-        });
+  // Create new session
+  sessionInitPromise = (async () => {
+    try {
+      const capabilities = await (window as any).self.ai.languageModel.capabilities();
+      
+      const session = await (window as any).self.ai.languageModel.create({
+        systemPrompt: compressionPrompt,
+        temperature: capabilities.defaultTemperature,
+        topK: capabilities.defaultTopK
       });
-      await summarizer.ready;
-    }
 
-    // Use streaming summarization
-    const stream = await summarizer.summarizeStreaming(text, {
-        sharedContext: compressionPrompt
-    //   context: compressionMode === '1:2' 
-    //     ? 'Summarize this content to about half its original length'
-    //     : 'Summarize this content to about one-third its original length'
-    });
+      // Wait for the model to be ready if needed
+      if (capabilities.available === 'after-download') {
+        await new Promise((resolve) => {
+          const downloadProgress = {
+            loaded: 0,
+            total: 0
+          };
+          
+          session.monitor((m: any) => {
+            m.addEventListener('downloadprogress', (e: any) => {
+              downloadProgress.loaded = e.loaded;
+              downloadProgress.total = e.total;
+              
+              // Create a custom event to notify UI of download progress
+              const event = new CustomEvent('modelDownloadProgress', { 
+                detail: downloadProgress 
+              });
+              window.dispatchEvent(event);
+              
+              if (e.loaded === e.total) {
+                resolve(true);
+              }
+            });
+          });
+        });
+        await session.ready;
+      }
+
+      activeSession = session;
+      return session;
+    } catch (error) {
+      console.error('Failed to initialize session:', error);
+      throw error;
+    } finally {
+      sessionInitPromise = null;
+    }
+  })();
+
+  return sessionInitPromise;
+}
+
+// Clean up session
+export function cleanupSession() {
+  if (activeSession) {
+    try {
+      activeSession.destroy();
+    } catch (error) {
+      console.error('Error cleaning up session:', error);
+    }
+    activeSession = null;
+  }
+}
+
+// Add event listener for page unload to cleanup
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', cleanupSession);
+}
+
+export async function compressWithChromeAI(text: string, compressionMode: string) {
+  try {
+    // Get or create session
+    const session = await getOrCreateSession();
+
+    // Create the prompt based on compression mode
+    const prompt = `Compress the following text to ${compressionMode === '1:2' ? 'half' : 'one-third'} of its original length while preserving key information:
+
+${text}`;
+
+    // Use streaming for better UX
+    const stream = await session.promptStreaming(prompt);
 
     // Return an async generator that yields summary chunks
     return {
       stream: async function* () {
-        let previousLength = 0;
+        let previousChunk = '';
         try {
-          for await (const segment of stream) {
-            const newContent = segment.slice(previousLength);
-            previousLength = segment.length;
-            yield newContent;
+          for await (const chunk of stream) {
+            const newChunk = chunk.startsWith(previousChunk)
+              ? chunk.slice(previousChunk.length)
+              : chunk;
+            yield newChunk;
+            previousChunk = chunk;
           }
         } catch (error) {
           console.error('Streaming error:', error);
-          yield fallbackCompression(text, compressionMode);
+          // If session error, cleanup and retry
+          if (error instanceof Error && error.message?.includes('session')) {
+            cleanupSession();
+          }
         }
       }
     };
 
   } catch (error) {
-    console.error('Chrome Summarizer API error:', error);
+    console.error('Chrome Prompt API error:', error);
+    toast.error('Prompt API is not usable at the moment');
     
-    // Fallback to basic text compression if API is not available
-    if (!isSummarizerAvailable()) {
-      return {
-        stream: async function* () {
-          yield fallbackCompression(text, compressionMode);
-        }
-      };
+    // If session error, cleanup for next attempt
+    if (error instanceof Error && error.message?.includes('session')) {
+      cleanupSession();
     }
     
     return null;
   }
-}
-
-// Fallback compression function when API is not available
-function fallbackCompression(text: string, mode: string): string {
-  // Split into sentences
-  const sentences = text.match(/[^.!?]+[.!?]+/g) || [text];
-  
-  if (mode === '1:2') {
-    // Keep every other sentence for 1:2 compression
-    return sentences
-      .filter((_, index) => index % 2 === 0)
-      .join(' ');
-  } else if (mode === '1:3') {
-    // Keep every third sentence for 1:3 compression
-    return sentences
-      .filter((_, index) => index % 3 === 0)
-      .join(' ');
-  }
-  
-  return text;
 }

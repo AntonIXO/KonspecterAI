@@ -503,6 +503,4 @@ average intelligence (humor me here), I wouldn’t have taken it.</doc_string>
   </Speedy_Examples>
   
 </Speedy_Prompt>
-
-Input text: 
 `;

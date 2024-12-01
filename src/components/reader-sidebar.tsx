@@ -37,7 +37,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { isSummarizerAvailable } from '@/utils/chromeai';
+import { isPromptAPIAvailable } from '@/utils/chromeai';
+import { ModelDownloadProgress } from "@/components/ModelDownloadProgress"
 
 // Add proper type definitions
 type MenuItem = {
@@ -351,7 +352,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
   const [isSummarizerEnabled, setIsSummarizerEnabled] = useState(false);
 
   useEffect(() => {
-    setIsSummarizerEnabled(isSummarizerAvailable());
+    setIsSummarizerEnabled(isPromptAPIAvailable());
   }, []);
 
   const compressionMenu = useMemo(() => (
@@ -386,6 +387,22 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
         </DropdownMenuContent>
       </DropdownMenu>
   ), [compressionMode, setCompressionMode, isSummarizerEnabled])
+
+  const [downloadProgress, setDownloadProgress] = useState<{loaded: number, total: number} | null>(null);
+
+  useEffect(() => {
+    const handler = (e: CustomEvent<{loaded: number, total: number}>) => {
+      setDownloadProgress(e.detail);
+    };
+    
+    window.addEventListener('modelDownloadProgress', handler as EventListener);
+    
+    // Reset progress when unmounting
+    return () => {
+      window.removeEventListener('modelDownloadProgress', handler as EventListener);
+      setDownloadProgress(null);
+    };
+  }, []);
 
   return (
     <>
@@ -483,8 +500,17 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
               ))}
             </SidebarMenu>
             <SidebarMenu>
+              {downloadProgress && (
+              <SidebarMenuItem>
+                  <div className="px-2 py-1 w-full">
+                    <ModelDownloadProgress 
+                      loaded={downloadProgress.loaded} 
+                      total={downloadProgress.total}
+                    />
+                  </div>
+                </SidebarMenuItem>
+              )}
               {compressionMenu}
-              {/* You can add more menu items or features here */}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
