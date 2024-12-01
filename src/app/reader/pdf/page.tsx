@@ -191,6 +191,7 @@ export default function PDFReader() {
   const [compressedContent, setCompressedContent] = useState<string>('');
   const [isCompressing, setIsCompressing] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string>('');
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
 
   useEffect(() => {
     if (!file) {
@@ -410,6 +411,12 @@ export default function PDFReader() {
     let isMounted = true;
 
     const compressCurrentPage = async () => {
+      // Abort any ongoing compression
+      if (abortController) {
+        abortController.abort();
+        setAbortController(null);
+      }
+
       if (!compressionDeps.pagesContent[compressionDeps.currentPage] || 
           compressionDeps.compressionMode === '1:1') {
         setCompressedContent('');
@@ -421,7 +428,6 @@ export default function PDFReader() {
       setStreamingContent('');
       
       try {
-        // Collect text from current and next pages based on compression mode
         const pagesToCompress = [compressionDeps.currentPage];
         if (compressionDeps.compressionMode === '1:2' && 
             compressionDeps.currentPage + 1 <= (compressionDeps.numPages || 1)) {
@@ -431,7 +437,6 @@ export default function PDFReader() {
           pagesToCompress.push(compressionDeps.currentPage + 1, compressionDeps.currentPage + 2);
         }
 
-        // Combine text from all relevant pages
         const textToCompress = pagesToCompress
           .map(pageNum => compressionDeps.pagesContent[pageNum] || '')
           .join('\n\n');
@@ -450,10 +455,15 @@ export default function PDFReader() {
           }
         }
       } catch (error) {
-        console.error('Compression error:', error);
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('Compression aborted');
+        } else {
+          console.error('Compression error:', error);
+        }
       } finally {
         if (isMounted) {
           setIsCompressing(false);
+          setAbortController(null);
         }
       }
     };
@@ -461,8 +471,20 @@ export default function PDFReader() {
     compressCurrentPage();
     return () => {
       isMounted = false;
+      if (abortController) {
+        abortController.abort();
+      }
     };
-  }, [compressionDeps]); // Now we only depend on the memoized object
+  }, [compressionDeps]);
+
+  // Add cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortController) {
+        abortController.abort();
+      }
+    };
+  }, [abortController]);
 
   if (!file) return null;
 
