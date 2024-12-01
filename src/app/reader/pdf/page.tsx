@@ -192,6 +192,7 @@ export default function PDFReader() {
   const [isCompressing, setIsCompressing] = useState(false);
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [isPending, setIsPending] = useState(false);
 
   useEffect(() => {
     if (!file) {
@@ -239,10 +240,16 @@ export default function PDFReader() {
 
   // Simplified navigation handlers using the shared logic
   const goToNextPage = useCallback(() => {
+    setCompressedContent('');
+    setStreamingContent('');
+    setIsPending(true);
     setCurrentPage(prev => calculatePageJump(prev, 'next', numPages, compressionMode));
   }, [numPages, compressionMode, calculatePageJump]);
 
   const goToPrevPage = useCallback(() => {
+    setCompressedContent('');
+    setStreamingContent('');
+    setIsPending(true);
     setCurrentPage(prev => calculatePageJump(prev, 'prev', numPages, compressionMode));
   }, [numPages, compressionMode, calculatePageJump]);
 
@@ -253,10 +260,14 @@ export default function PDFReader() {
       return;
     }
 
+    // Clear content and show loading state before page change
+    setCompressedContent('');
+    setStreamingContent('');
+    setIsPending(true);
+
     // Ensure the page aligns with compression mode
     if (compressionMode !== '1:1') {
       const jump = compressionMode === '1:3' ? 3 : 2;
-      // Round to nearest valid page number based on jump size
       const alignedPage = Math.ceil(newPage / jump) * jump - (jump - 1);
       setCurrentPage(Math.min(alignedPage, numPages || 1));
       setInputValue(String(alignedPage));
@@ -421,11 +432,11 @@ export default function PDFReader() {
           compressionDeps.compressionMode === '1:1') {
         setCompressedContent('');
         setStreamingContent('');
+        setIsPending(false);
         return;
       }
 
       setIsCompressing(true);
-      setStreamingContent('');
       
       try {
         const pagesToCompress = [compressionDeps.currentPage];
@@ -464,6 +475,7 @@ export default function PDFReader() {
         if (isMounted) {
           setIsCompressing(false);
           setAbortController(null);
+          setIsPending(false);
         }
       }
     };
@@ -504,12 +516,12 @@ export default function PDFReader() {
 
           <Card 
             className="w-full overflow-hidden bg-white dark:bg-gray-950"
-            style={{
-              height: compressionMode === '1:1' && pageDimensions.height > 0 
-                ? `${pageDimensions.height * scale}px` 
-                : 'auto',
-              transition: 'height 0.2s ease-in-out'
-            }}
+            // style={{
+            //   height: compressionMode === '1:1' && pageDimensions.height > 0 
+            //     ? `${pageDimensions.height * scale}px` 
+            //     : 'auto',
+            //   transition: 'height 0.2s ease-in-out'
+            // }}
           >
             <CardContent className="p-2 sm:p-4 md:p-6">
               <div className="w-full flex flex-col items-center" {...swipeHandlers}>
@@ -526,7 +538,7 @@ export default function PDFReader() {
                 ) : (
                   <CompressedView 
                     content={compressedContent}
-                    isLoading={isCompressing}
+                    isLoading={isCompressing || isPending}
                     streamingContent={streamingContent}
                   />
                 )}
