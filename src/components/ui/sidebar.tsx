@@ -28,6 +28,23 @@ const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
 type CompressionMode = "1:1" | "1:2" | "1:3"
 
+// Add supported languages with their country codes
+export const SUPPORTED_LANGUAGES = {
+  disabled: { name: "Disabled", flag: "⚪" },
+  en: { name: "English", flag: "🇬🇧" },
+  es: { name: "Spanish", flag: "🇪🇸" },
+  fr: { name: "French", flag: "🇫🇷" },
+  de: { name: "German", flag: "🇩🇪" },
+  it: { name: "Italian", flag: "🇮🇹" },
+  pt: { name: "Portuguese", flag: "🇵🇹" },
+  ru: { name: "Russian", flag: "🇷🇺" },
+  zh: { name: "Chinese", flag: "🇨🇳" },
+  ja: { name: "Japanese", flag: "🇯🇵" },
+  ko: { name: "Korean", flag: "🇰🇷" }
+} as const;
+
+export type SupportedLanguage = keyof typeof SUPPORTED_LANGUAGES;
+
 type SidebarContext = {
   state: "expanded" | "collapsed"
   open: boolean
@@ -38,6 +55,8 @@ type SidebarContext = {
   toggleSidebar: () => void
   compressionMode: CompressionMode
   setCompressionMode: (mode: CompressionMode) => void
+  language: SupportedLanguage
+  setLanguage: (language: SupportedLanguage) => void
 }
 
 const SidebarContext = React.createContext<SidebarContext | null>(null)
@@ -74,6 +93,7 @@ const SidebarProvider = React.forwardRef<
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
     const [compressionMode, setCompressionMode] = React.useState<CompressionMode>("1:1")
+    const [language, setLanguage] = React.useState<SupportedLanguage>("disabled")
 
     // This is the internal state of the sidebar.
     // We use openProp and setOpenProp for control from outside the component.
@@ -132,6 +152,8 @@ const SidebarProvider = React.forwardRef<
         toggleSidebar,
         compressionMode,
         setCompressionMode,
+        language,
+        setLanguage,
       }),
       [
         state,
@@ -143,6 +165,8 @@ const SidebarProvider = React.forwardRef<
         toggleSidebar,
         compressionMode,
         setCompressionMode,
+        language,
+        setLanguage,
       ]
     )
 

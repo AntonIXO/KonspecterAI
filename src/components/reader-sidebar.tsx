@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronRight, Zap, LucideIcon, ScrollText, X, Brain, ChevronDown, Bot, ZapOff, PlugZap } from "lucide-react"
+import { ChevronRight, Zap, LucideIcon, ScrollText, X, Brain, ChevronDown, Bot, ZapOff, PlugZap, Globe2 } from "lucide-react"
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link"
@@ -39,6 +39,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { isPromptAPIAvailable } from '@/utils/chromeai';
 import { ModelDownloadProgress } from "@/components/ModelDownloadProgress"
+import { cn } from "@/lib/utils"
+import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/components/ui/sidebar"
 
 // Add proper type definitions
 type MenuItem = {
@@ -83,7 +85,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
   ...props 
 }: ReaderSidebarProps) {
   const [data, setData] = useState(baseData); // Initialize state with baseData
-  const { state, compressionMode, setCompressionMode } = useSidebar();
+  const { state, compressionMode, setCompressionMode, setLanguage, language } = useSidebar();
   const { filename } = useFile();
 
   const supabase = createClient()
@@ -404,6 +406,53 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
     };
   }, []);
 
+  // Add translation menu component
+  const translationMenu = useMemo(() => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <SidebarMenuButton 
+          className="w-full justify-between group relative"
+          tooltip="Translate text"
+        >
+          <div className="flex items-center">
+            <Globe2 className="h-4 w-4" />
+            <span className="ml-2 group-data-[state=collapsed]:hidden">
+              {language === "disabled" ? (
+                "Translation: Disabled"
+              ) : (
+                `Translate to: ${SUPPORTED_LANGUAGES[language].name} ${SUPPORTED_LANGUAGES[language].flag}`
+              )}
+            </span>
+          </div>
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </SidebarMenuButton>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-[160px] max-h-[300px] overflow-y-auto">
+        {Object.entries(SUPPORTED_LANGUAGES).map(([code, { name, flag }]) => (
+          <DropdownMenuItem 
+            key={code}
+            onClick={() => setLanguage(code as SupportedLanguage)}
+            className={cn(
+              "flex items-center gap-2",
+              code === "disabled" && "border-b border-border"
+            )}
+          >
+            <span className="text-base">{flag}</span>
+            <span className={cn(
+              "flex-1",
+              language === code && "font-medium"
+            )}>
+              {name}
+            </span>
+            {language === code && (
+              <ChevronRight className="h-4 w-4 ml-2 opacity-50" />
+            )}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ), [language]);
+
   return (
     <>
       <Sidebar 
@@ -499,6 +548,9 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
                 </Collapsible>
               ))}
             </SidebarMenu>
+          </SidebarGroup>
+          <SidebarGroup>
+            <SidebarGroupLabel>Local AI</SidebarGroupLabel>
             <SidebarMenu>
               {downloadProgress && (
               <SidebarMenuItem>
@@ -511,6 +563,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
                 </SidebarMenuItem>
               )}
               {compressionMenu}
+              {translationMenu}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>

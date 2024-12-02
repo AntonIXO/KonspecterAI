@@ -429,7 +429,7 @@ export const compressionPrompt = `
     
     3. **Output Format:**
        - Do NOT add headers or footers.
-       - Do NOT output "Explanation of Changes" or "Summary of Changes" results...
+       - Do NOT output "Explanation of Changes", "Summary of Changes" and "Changes made" results...
        - Only output the processed text in the response.
        - **Visual Organization:** Utilize markdown, spacing, and structure to aid rapid comprehension and perception.
        - **Readability:** Ensure optimal formatting for quick yet thorough understanding.

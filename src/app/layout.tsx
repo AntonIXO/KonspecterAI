@@ -54,7 +54,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="KonspecterAI" />
-        {/* Origin trials */}
+        {/* Origin trials. Works only on Chrome */}
         <meta httpEquiv="origin-trial" content={summarizerToken}></meta> {/* Summarizer API */}
         <meta httpEquiv="origin-trial" content={translatorToken}></meta> {/* Translator API */}
         <meta httpEquiv="origin-trial" content={languageDetectionToken}></meta> {/* Language Detection API */}
@@ -86,26 +86,6 @@ export default function RootLayout({
             </SidebarProvider>
           </ThemeProvider>
         </TextProvider>
-        <Script
-          id="register-sw"
-          strategy="lazyOnload"
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(
-                    function(registration) {
-                      console.log('ServiceWorker registration successful');
-                    },
-                    function(err) {
-                      console.log('ServiceWorker registration failed: ', err);
-                    }
-                  );
-                });
-              }
-            `,
-          }}
-        />
       </body>
     </html>
   );
