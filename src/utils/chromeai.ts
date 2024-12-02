@@ -109,7 +109,7 @@ async function getOrCreateTranslationFormater() {
       const rewriter = await (window as any).ai.rewriter.create({
         tone: 'as-is',
         format: 'markdown',
-        length: 'same',
+        length: 'as-is',
         sharedContext: translationFormatPrompt
       });
 
@@ -337,6 +337,7 @@ export async function compressWithChromeAI(text: string, compressionMode: string
   } catch (error) {
     console.error('rewriter API error:', error);
     toast.error('rewriter API is not usable at the moment');
+    dispatchGenerationEnd();
     return null;
   }
 }
