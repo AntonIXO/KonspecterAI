@@ -33,9 +33,8 @@ const dispatchDownloadProgress = (loaded: number, total: number) => {
 
 // Check if the Prompt API is available in the browser
 export const isPromptAPIAvailable = () => {
-  return 'chrome' in window && 
-         'self' in window &&
-         'ai' in (window as any).self;
+  return 'ai' in window && 
+         'rewriter' in (window as any).ai;
 };
 
 export const isTranslationAPIAvailable = () => {
@@ -44,8 +43,8 @@ export const isTranslationAPIAvailable = () => {
          'createTranslator' in (window as any).translation;
 };
 
-// Initialize compression session if needed
-async function getOrCreateCompressionSession() {
+// Initialize rewriter if needed
+async function getOrCreateRewriter() {
   if (activeCompressionSession) {
     return activeCompressionSession;
   }
@@ -56,33 +55,36 @@ async function getOrCreateCompressionSession() {
 
   compressionSessionInitPromise = (async () => {
     try {
-      const capabilities = await (window as any).self.ai.languageModel.capabilities();
+      // const capabilities = await (window as any).ai.rewriter.capabilities();
       
-      const session = await (window as any).self.ai.languageModel.create({
-        systemPrompt: compressionPrompt,
-        temperature: capabilities.defaultTemperature,
-        topK: capabilities.defaultTopK
+      // if (capabilities.available === 'no') {
+      //   throw new Error('rewriter API is not available');
+      // }
+
+      const rewriter = await (window as any).ai.rewriter.create({
+        tone: 'as-is',
+        format: 'markdown',
+        length: 'shorter',
+        sharedContext: compressionPrompt
       });
 
-      if (capabilities.available === 'after-download') {
-        toast.info('Downloading compression model...');
-        await new Promise((resolve) => {
-          session.monitor((m: any) => {
-            m.addEventListener('downloadprogress', (e: any) => {
-              dispatchDownloadProgress(e.loaded, e.total);
-              if (e.loaded === e.total) {
-                resolve(true);
-              }
-            });
-          });
-        });
-        await session.ready;
-      }
+      // if (capabilities.available === 'after-download') {
+      //   toast.info('Downloading rewriter model...');
+      //   await new Promise((resolve) => {
+      //     rewriter.addEventListener('downloadprogress', (e: any) => {
+      //       dispatchDownloadProgress(e.loaded, e.total);
+      //       if (e.loaded === e.total) {
+      //         resolve(true);
+      //       }
+      //     });
+      //   });
+      //   await rewriter.ready;
+      // }
 
-      activeCompressionSession = session;
-      return session;
+      activeCompressionSession = rewriter;
+      return rewriter;
     } catch (error) {
-      console.error('Failed to initialize compression session:', error);
+      console.error('Failed to initialize rewriter:', error);
       throw error;
     } finally {
       compressionSessionInitPromise = null;
@@ -104,33 +106,17 @@ async function getOrCreateTranslationFormater() {
 
   translationSessionInitPromise = (async () => {
     try {
-      const capabilities = await (window as any).self.ai.languageModel.capabilities();
-      
-      const session = await (window as any).self.ai.languageModel.create({
-        systemPrompt: translationFormatPrompt,
-        temperature: capabilities.defaultTemperature,
-        topK: capabilities.defaultTopK
+      const rewriter = await (window as any).ai.rewriter.create({
+        tone: 'as-is',
+        format: 'markdown',
+        length: 'same',
+        sharedContext: translationFormatPrompt
       });
 
-      if (capabilities.available === 'after-download') {
-        toast.info('Downloading translation formatting model...');
-        await new Promise((resolve) => {
-          session.monitor((m: any) => {
-            m.addEventListener('downloadprogress', (e: any) => {
-              dispatchDownloadProgress(e.loaded, e.total);
-              if (e.loaded === e.total) {
-                resolve(true);
-              }
-            });
-          });
-        });
-        await session.ready;
-      }
-
-      activeTranslationSession = session;
-      return session;
+      activeTranslationSession = rewriter;
+      return rewriter;
     } catch (error) {
-      console.error('Failed to initialize translation session:', error);
+      console.error('Failed to initialize translation formatter:', error);
       throw error;
     } finally {
       translationSessionInitPromise = null;
@@ -254,7 +240,7 @@ async function getOrCreateTranslator(sourceLanguage: string, targetLanguage: str
   return translatorInitPromise;
 }
 
-// Update translation function to use translation session
+// Update translation function to use rewriter for formatting
 export async function translateText(text: string, targetLanguage: string, signal?: AbortSignal) {
   try {
     dispatchGenerationStart();
@@ -275,24 +261,27 @@ export async function translateText(text: string, targetLanguage: string, signal
     const translator = await getOrCreateTranslator(sourceLanguage, targetLanguage);
     const translatedText = await translator.translate(text);
 
-    const session = await getOrCreateTranslationFormater();
-    const formatPrompt = `Format this translated text:\n${translatedText}`;
+    const formatter = await getOrCreateTranslationFormater();
     
-    const stream = await session.promptStreaming(formatPrompt, { signal });
+    // Use rewriter's streaming API for formatting
+    const stream = await formatter.rewriteStreaming(translatedText, {
+      context: 'Format this translated text while preserving its structure and meaning'
+    });
 
     return {
       stream: async function* () {
+        let previousLength = 0;
         try {
-          for await (const chunk of stream) {
-            yield chunk;
+          for await (const segment of stream) {
+            const newContent = segment.slice(previousLength);
+            previousLength = segment.length;
+            yield newContent;
           }
         } catch (error) {
           if (error instanceof Error && error.name === 'AbortError') {
             throw error;
           }
           console.error('Stream error:', error);
-        } finally {
-          dispatchGenerationEnd();
         }
       }
     };
@@ -304,59 +293,66 @@ export async function translateText(text: string, targetLanguage: string, signal
     }
     console.error('Translation error:', error);
     toast.error('Translation failed');
+    dispatchGenerationEnd();
     return null;
   }
 }
 
-// Update compression function to use compression session
+// Update compression function to use rewriter API
 export async function compressWithChromeAI(text: string, compressionMode: string) {
   try {
     dispatchGenerationStart();
-    const session = await getOrCreateCompressionSession();
-    const controller = new AbortController();
+    const rewriter = await getOrCreateRewriter();
 
-    const prompt = `Compress the following text to ${compressionMode === '1:2' ? 'half' : 'one-third'} of its original length while preserving key information:
+    // Configure options based on compression mode
+    const options = {
+      context: `Rewrite this content to about ${compressionMode === '1:2' ? 'half' : 'one-third'} its original length`
+    };
 
-${text}`;
-
-    const stream = await session.promptStreaming(prompt, { signal: controller.signal });
+    // Use streaming summarization
+    const stream = await rewriter.rewriteStreaming(text, options);
 
     return {
       stream: async function* () {
-        let previousChunk = '';
+        let previousLength = 0;
         try {
-          for await (const chunk of stream) {
-            const newChunk = chunk.startsWith(previousChunk)
-              ? chunk.slice(previousChunk.length)
-              : chunk;
-            yield newChunk;
-            previousChunk = chunk;
+          for await (const segment of stream) {
+            const newContent = segment.slice(previousLength);
+            previousLength = segment.length;
+            yield newContent;
           }
         } catch (error) {
           if (error instanceof Error && error.name === 'AbortError') {
-            console.log('Prompt aborted');
-            dispatchGenerationEnd();
           } else {
             console.error('Streaming error:', error);
           }
-        } finally {
-          dispatchGenerationEnd();
         }
       },
       cancel: () => {
-        controller.abort();
+        if (stream.cancel) {
+          stream.cancel();
+        }
       }
     };
   } catch (error) {
-    console.error('Chrome Prompt API error:', error);
-    toast.error('Prompt API is not usable at the moment');
+    console.error('rewriter API error:', error);
+    toast.error('rewriter API is not usable at the moment');
     return null;
   }
 }
 
-// Update cleanup function to handle all sessions
+// Update cleanup function
 export function cleanupSession() {
   dispatchGenerationEnd();
+  if (activeCompressionSession) {
+    try {
+      activeCompressionSession.destroy();
+    } catch (error) {
+      console.error('Error cleaning up rewriter:', error);
+    }
+    activeCompressionSession = null;
+  }
+
   if (activeTranslationSession) {
     try {
       activeTranslationSession.destroy();
@@ -364,15 +360,6 @@ export function cleanupSession() {
       console.error('Error cleaning up translation session:', error);
     }
     activeTranslationSession = null;
-  }
-
-  if (activeCompressionSession) {
-    try {
-      activeCompressionSession.destroy();
-    } catch (error) {
-      console.error('Error cleaning up compression session:', error);
-    }
-    activeCompressionSession = null;
   }
 
   if (activeTranslator) {

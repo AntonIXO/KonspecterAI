@@ -410,16 +410,13 @@ export const compressionPrompt = `
     The response generation involves three stages:
   
     1. **Reading:**
-        - Scan the text in natural chunks, similar to human speed readers.
-        - Skip incomplete paragraphs.
         - Identify patterns and key information points.
         - Maintain context from previous text inputs.
     
     2. **Processing:**
       - **Compression Mode Handling:**
-        - On input, specify the compression mode. 1:2 for two pages to one, 1:3 for three pages to one.
+        - On input, specify the compression mode. 1:2 mode for two pages to one, 1:3 mode for three pages to one.
         - Adjust the level of compression based on the specified mode.
-        - Put information from 2 or 3 pages into 1.
       - Retain the original text with the following modifications:
         - **Include:** Most important information such as characters, situations, facts, key phrases, etc.
         - **Exclude:** Less important information such as detailed descriptions, secondary characters, and minor details.
@@ -429,7 +426,6 @@ export const compressionPrompt = `
     
     3. **Output Format:**
        - Do NOT add headers or footers.
-       - Do NOT output "Explanation of Changes", "Summary of Changes" and "Changes made" results...
        - Only output the processed text in the response.
        - **Visual Organization:** Utilize markdown, spacing, and structure to aid rapid comprehension and perception.
        - **Readability:** Ensure optimal formatting for quick yet thorough understanding.
@@ -517,58 +513,6 @@ average intelligence (humor me here), I wouldn’t have taken it.</doc_string>
       </assistant_response>
     </example>
     
-    <example>
-      <doc_string>Your weekly meeting lasts one hour. During the meeting, you and your team discuss various topics, including project updates, upcoming deadlines, and any obstacles you're encountering. Sometimes, the meetings get sidetracked with off-topic conversations that take away valuable time from addressing important issues. It's crucial to keep these meetings focused and efficient to ensure that everyone's time is used effectively.</doc_string>
-      <input_mode>1:2</input_mode>
-      <assistant_response>
-        Your weekly meeting is one hour long, covering:
-        - **Project Updates**
-        - **Upcoming Deadlines**
-        - **Obstacles Encountered**
-        
-        Occasionally, off-topic conversations derail the meeting, wasting valuable time. It's essential to keep meetings focused and efficient to ensure effective use of everyone's time.
-      </assistant_response>
-    </example>
-    
-    <example>
-      <doc_string>The new software update improves application performance by optimizing the codebase and reducing load times. Additionally, it introduces new features such as dark mode, enhanced security protocols, and a more intuitive user interface. Users have reported a noticeable difference in speed and responsiveness since the update was installed.</doc_string>
-      <input_mode>1:3</input_mode>
-      <assistant_response>
-        The new software update enhances performance by optimizing the codebase and reducing load times. It introduces:
-        - **Dark Mode**
-        - **Enhanced Security Protocols**
-        - **More Intuitive User Interface**
-        
-        Users have noticed improved speed and responsiveness after installing the update.
-      </assistant_response>
-    </example>
-    
-    <example>
-      <doc_string>Our company's mission is to deliver high-quality products that meet the needs of our customers. We focus on innovation, sustainability, and customer satisfaction. By continuously improving our processes and leveraging the latest technologies, we strive to stay ahead in the market and provide value to our stakeholders.</doc_string>
-      <input_mode>1:2</input_mode>
-      <assistant_response>
-        Our mission is to deliver high-quality products that meet customer needs. We focus on:
-        - **Innovation**
-        - **Sustainability**
-        - **Customer Satisfaction**
-        
-        By continuously improving processes and leveraging the latest technologies, we aim to stay ahead in the market and provide value to our stakeholders.
-      </assistant_response>
-    </example>
-    
-    <example>
-      <doc_string>Implementing the new feature requires updating the database schema, modifying the API endpoints, and redesigning the user interface. The development team will need to collaborate closely to ensure that all components integrate seamlessly. Additionally, thorough testing must be conducted to identify and fix any bugs before the feature is deployed to production.</doc_string>
-      <input_mode>1:2</input_mode>
-      <assistant_response>
-        Implementing the new feature involves:
-        - **Updating the Database Schema**
-        - **Modifying API Endpoints**
-        - **Redesigning the User Interface**
-        
-        The development team must collaborate closely to ensure seamless integration of all components. Thorough testing is essential to identify and fix bugs before deploying the feature to production.
-      </assistant_response>
-    </example>
-  
   </Speedy_Examples>
   
 </Speedy_Prompt>
@@ -585,6 +529,7 @@ export const translationFormatPrompt = `
   - Use markdown formatting
   - Preserve line breaks between paragraphs
   - Remove any unnecessary spaces or formatting artifacts
+  - Improve text flow to better fit translated language
 
   **Format Rules:**
   1. Start each paragraph with no indentation
@@ -598,9 +543,9 @@ export const translationFormatPrompt = `
      - Perspective
 
   **Do NOT:**
+  - Output page headers or footers
   - Add any commentary or explanations
   - Modify the content or meaning
-  - Add headers or section titles
   - Include formatting instructions in output
   - Add line numbers or markers
 </Translation_Formatter>

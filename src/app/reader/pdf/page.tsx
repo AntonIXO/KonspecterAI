@@ -361,20 +361,33 @@ export default function PDFReader() {
     numPages
   }), [pagesContent, currentPage, compressionMode, numPages]);
 
-  // Update the compression effect to handle translation
+  // Update the compression effect to handle multiple pages
   useEffect(() => {
     let isMounted = true;
 
     const processPage = async () => {
-      // Create new abort controller for this process
       if (abortController) {
         abortController.abort();
       }
       const controller = new AbortController();
       setAbortController(controller);
 
-      const currentText = compressionDeps.pagesContent[compressionDeps.currentPage];
-      if (!currentText) {
+      // Get text from current and next pages based on compression mode
+      const pagesToInclude = compressionMode === '1:3' ? 3 : 
+                            compressionMode === '1:2' ? 2 : 1;
+      
+      let combinedText = '';
+      for (let i = 0; i < pagesToInclude; i++) {
+        const pageNum = compressionDeps.currentPage + i;
+        if (pageNum <= (compressionDeps.numPages || 1)) {
+          const pageContent = compressionDeps.pagesContent[pageNum];
+          if (pageContent) {
+            combinedText += (i > 0 ? '\n\n' : '') + pageContent.text;
+          }
+        }
+      }
+
+      if (!combinedText) {
         setCompressedContent('');
         setStreamingContent('');
         setTranslatedContent('');
@@ -387,7 +400,7 @@ export default function PDFReader() {
         if (compressionDeps.compressionMode !== '1:1') {
           setIsCompressing(true);
           const result = await compressWithChromeAI(
-            currentText.text, 
+            combinedText,
             compressionDeps.compressionMode
           );
 
@@ -408,7 +421,7 @@ export default function PDFReader() {
         if (language !== 'disabled') {
           setIsTranslating(true);
           const result = await translateText(
-            currentText.text, 
+            combinedText,
             language,
             controller.signal
           );
@@ -419,7 +432,6 @@ export default function PDFReader() {
             
             for await (const chunk of result.stream()) {
               if (!isMounted) break;
-              // Handle chunk the same way as in compression
               const newChunk = chunk.startsWith(previousChunk)
                 ? chunk.slice(previousChunk.length)
                 : chunk;
