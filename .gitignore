@@ -52,4 +52,5 @@ supabase/.temp
 public/sw*
 public/swe-worker*
 
-.million
+.million/
+.chromeai/

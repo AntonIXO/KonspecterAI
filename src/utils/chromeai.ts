@@ -236,9 +236,12 @@ async function getOrCreateTranslator(sourceLanguage: string, targetLanguage: str
       });
 
       // Wait for the model to be ready if needed
+      console.log('Waiting for model to download');
+      console.log('canTranslate', canTranslate);
       if (canTranslate === 'after-download') {
         await new Promise((resolve) => {
           translator.ondownloadprogress = (e: any) => {
+            console.log('Download progress', e);
             const event = new CustomEvent('modelDownloadProgress', { 
               detail: { loaded: e.loaded, total: e.total } 
             });

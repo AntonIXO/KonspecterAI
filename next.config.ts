@@ -14,9 +14,9 @@ const withSerwist = withSerwistConfig({
 const nextConfig: NextConfig = {
   // output: 'standalone',
   compress: false,
-  experimental: {
-    cssChunking: 'loose',
-  },
+  // experimental: {
+  //   cssChunking: 'loose',
+  // },
   // webpack(config) {
   //   config.infrastructureLogging = { debug: /PackFileCache/ }
   //   return config;

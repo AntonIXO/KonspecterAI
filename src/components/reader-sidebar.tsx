@@ -394,6 +394,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
 
   useEffect(() => {
     const handler = (e: CustomEvent<{loaded: number, total: number}>) => {
+      console.log('Download progress', e.detail);
       setDownloadProgress(e.detail);
     };
     
@@ -590,12 +591,12 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
               )}
               {compressionMenu}
               {translationMenu}
-              {isGenerating && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={handleInterrupt}
                     className="w-full justify-between text-red-500 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-950"
                     tooltip="Stop Generation"
+                    disabled={!isGenerating}
                   >
                     <div className="flex items-center">
                       <StopCircle className="h-4 w-4" />
@@ -603,7 +604,6 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
                     </div>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              )}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>
