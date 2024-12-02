@@ -390,23 +390,6 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
       </DropdownMenu>
   ), [compressionMode, setCompressionMode, isSummarizerEnabled])
 
-  const [downloadProgress, setDownloadProgress] = useState<{loaded: number, total: number} | null>(null);
-
-  useEffect(() => {
-    const handler = (e: CustomEvent<{loaded: number, total: number}>) => {
-      console.log('Download progress', e.detail);
-      setDownloadProgress(e.detail);
-    };
-    
-    window.addEventListener('modelDownloadProgress', handler as EventListener);
-    
-    // Reset progress when unmounting
-    return () => {
-      window.removeEventListener('modelDownloadProgress', handler as EventListener);
-      setDownloadProgress(null);
-    };
-  }, []);
-
   // Add translation menu component
   const translationMenu = useMemo(() => (
     <DropdownMenu>
@@ -579,31 +562,24 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
           <SidebarGroup>
             <SidebarGroupLabel>Offline AI</SidebarGroupLabel>
             <SidebarMenu>
-              {downloadProgress && (
               <SidebarMenuItem>
-                  <div className="px-2 py-1 w-full">
-                    <ModelDownloadProgress 
-                      loaded={downloadProgress.loaded} 
-                      total={downloadProgress.total}
-                    />
-                  </div>
-                </SidebarMenuItem>
-              )}
+                <ModelDownloadProgress />
+              </SidebarMenuItem>
               {compressionMenu}
               {translationMenu}
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    onClick={handleInterrupt}
-                    className="w-full justify-between text-red-500 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-950"
-                    tooltip="Stop Generation"
-                    disabled={!isGenerating}
-                  >
-                    <div className="flex items-center">
-                      <StopCircle className="h-4 w-4" />
-                      <span className="ml-2 group-data-[state=collapsed]:hidden">Stop Generation</span>
-                    </div>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  onClick={handleInterrupt}
+                  className="w-full justify-between text-red-500 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-950"
+                  tooltip="Stop Generation"
+                  disabled={!isGenerating}
+                >
+                  <div className="flex items-center">
+                    <StopCircle className="h-4 w-4" />
+                    <span className="ml-2 group-data-[state=collapsed]:hidden">Stop Generation</span>
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>

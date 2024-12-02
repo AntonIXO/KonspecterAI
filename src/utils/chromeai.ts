@@ -22,6 +22,15 @@ const dispatchGenerationEnd = () => {
   window.dispatchEvent(new CustomEvent('generationEnd'));
 };
 
+// Add a helper function at the top of the file
+const dispatchDownloadProgress = (loaded: number, total: number) => {
+  console.log('Dispatching download progress:', { loaded, total });
+  const event = new CustomEvent('downloadprogress', { 
+    detail: { loaded, total } 
+  });
+  window.dispatchEvent(event);
+};
+
 // Check if the Prompt API is available in the browser
 export const isPromptAPIAvailable = () => {
   return 'chrome' in window && 
@@ -56,14 +65,11 @@ async function getOrCreateCompressionSession() {
       });
 
       if (capabilities.available === 'after-download') {
+        toast.info('Downloading compression model...');
         await new Promise((resolve) => {
           session.monitor((m: any) => {
             m.addEventListener('downloadprogress', (e: any) => {
-              const event = new CustomEvent('modelDownloadProgress', { 
-                detail: { loaded: e.loaded, total: e.total } 
-              });
-              window.dispatchEvent(event);
-              
+              dispatchDownloadProgress(e.loaded, e.total);
               if (e.loaded === e.total) {
                 resolve(true);
               }
@@ -87,7 +93,7 @@ async function getOrCreateCompressionSession() {
 }
 
 // Initialize translation formatting session if needed
-async function getOrCreateTranslationSession() {
+async function getOrCreateTranslationFormater() {
   if (activeTranslationSession) {
     return activeTranslationSession;
   }
@@ -107,14 +113,11 @@ async function getOrCreateTranslationSession() {
       });
 
       if (capabilities.available === 'after-download') {
+        toast.info('Downloading translation formatting model...');
         await new Promise((resolve) => {
           session.monitor((m: any) => {
             m.addEventListener('downloadprogress', (e: any) => {
-              const event = new CustomEvent('modelDownloadProgress', { 
-                detail: { loaded: e.loaded, total: e.total } 
-              });
-              window.dispatchEvent(event);
-              
+              dispatchDownloadProgress(e.loaded, e.total);
               if (e.loaded === e.total) {
                 resolve(true);
               }
@@ -159,26 +162,13 @@ async function getOrCreateDetector() {
       }
 
       const detector = await (window as any).translation.createDetector();
-      console.log('canDetect', canDetect);
 
       // Wait for the model to be ready if needed
       if (canDetect === 'after-download') {
+        toast.info('Downloading language detection model...');
         await new Promise((resolve) => {
-          const downloadProgress = {
-            loaded: 0,
-            total: 0
-          };
-          
           detector.addEventListener('downloadprogress', (e: any) => {
-            downloadProgress.loaded = e.loaded;
-            downloadProgress.total = e.total;
-            
-            // Create a custom event to notify UI of download progress
-            const event = new CustomEvent('modelDownloadProgress', { 
-              detail: downloadProgress 
-            });
-            window.dispatchEvent(event);
-            
+            dispatchDownloadProgress(e.loaded, e.total);
             if (e.loaded === e.total) {
               resolve(true);
             }
@@ -236,17 +226,11 @@ async function getOrCreateTranslator(sourceLanguage: string, targetLanguage: str
       });
 
       // Wait for the model to be ready if needed
-      console.log('Waiting for model to download');
-      console.log('canTranslate', canTranslate);
       if (canTranslate === 'after-download') {
+        toast.info('Downloading translation model...');
         await new Promise((resolve) => {
           translator.ondownloadprogress = (e: any) => {
-            console.log('Download progress', e);
-            const event = new CustomEvent('modelDownloadProgress', { 
-              detail: { loaded: e.loaded, total: e.total } 
-            });
-            window.dispatchEvent(event);
-            
+            dispatchDownloadProgress(e.loaded, e.total);
             if (e.loaded === e.total) {
               resolve(true);
             }
@@ -291,7 +275,7 @@ export async function translateText(text: string, targetLanguage: string, signal
     const translator = await getOrCreateTranslator(sourceLanguage, targetLanguage);
     const translatedText = await translator.translate(text);
 
-    const session = await getOrCreateTranslationSession();
+    const session = await getOrCreateTranslationFormater();
     const formatPrompt = `Format this translated text:\n${translatedText}`;
     
     const stream = await session.promptStreaming(formatPrompt, { signal });
