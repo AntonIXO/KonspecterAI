@@ -241,7 +241,7 @@ async function getOrCreateTranslator(sourceLanguage: string, targetLanguage: str
 }
 
 // Update translation function to use rewriter for formatting
-export async function translateText(text: string, targetLanguage: string, signal?: AbortSignal) {
+export async function translateText(text: string, targetLanguage: string) {
   try {
     dispatchGenerationStart();
     const detector = await getOrCreateDetector();

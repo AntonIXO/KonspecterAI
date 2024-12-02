@@ -5,6 +5,8 @@ import { geminiFlashModel } from "@/lib/ai";
 import { z } from 'zod';
 import { createClient } from "@/utils/supabase/server";
 
+// const model = isChromeAIAvailable
+
 const quizSchema = z.object({
   questions: z.array(
     z.object({

@@ -423,7 +423,6 @@ export default function PDFReader() {
           const result = await translateText(
             combinedText,
             language,
-            controller.signal
           );
 
           if (isMounted && result?.stream) {
