@@ -2,9 +2,18 @@
 
 import { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
+interface PageContent {
+  text: string;
+  incompleteText: string;
+}
+
+interface PagesContent {
+  [pageNum: number]: PageContent;
+}
+
 interface TextContextType {
-  pagesContent: { [pageNum: number]: string };
-  setPageContent: (pageNum: number, content: string) => void;
+  pagesContent: PagesContent;
+  setPageContent: (pageNum: number, content: PageContent) => void;
   clearContent: () => void;
   getPageRange: (startPage: number, endPage: number) => string;
 }
@@ -12,9 +21,9 @@ interface TextContextType {
 const TextContext = createContext<TextContextType | undefined>(undefined);
 
 export function TextProvider({ children }: { children: ReactNode }) {
-  const [pagesContent, setPagesContent] = useState<{ [pageNum: number]: string }>({});
+  const [pagesContent, setPagesContent] = useState<PagesContent>({});
 
-  const setPageContent = useCallback((pageNum: number, content: string) => {
+  const setPageContent = useCallback((pageNum: number, content: PageContent) => {
     setPagesContent(prev => {
       // If content already exists and is the same, don't update
       if (prev[pageNum] === content) {
@@ -31,7 +40,7 @@ export function TextProvider({ children }: { children: ReactNode }) {
           .slice(0, 7);
         
         // Create new object with only the pages we want to keep
-        const filteredContent: { [key: number]: string } = {};
+        const filteredContent: PagesContent = {};
         sortedPages.forEach(p => {
           filteredContent[p] = newContent[p];
         });

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { ChevronRight, Zap, LucideIcon, ScrollText, X, Brain, ChevronDown, Bot, ZapOff, PlugZap, Globe2 } from "lucide-react"
+import { ChevronRight, Zap, LucideIcon, ScrollText, X, Brain, ChevronDown, Bot, ZapOff, PlugZap, Globe2, StopCircle } from "lucide-react"
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from "@/utils/supabase/client";
 import Link from "next/link"
@@ -37,7 +37,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { isPromptAPIAvailable } from '@/utils/chromeai';
+import { isPromptAPIAvailable, cleanupSession, isTranslationAPIAvailable } from '@/utils/chromeai';
 import { ModelDownloadProgress } from "@/components/ModelDownloadProgress"
 import { cn } from "@/lib/utils"
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/components/ui/sidebar"
@@ -413,6 +413,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
         <SidebarMenuButton 
           className="w-full justify-between group relative"
           tooltip="Translate text"
+          disabled={!isTranslationAPIAvailable()}
         >
           <div className="flex items-center">
             <Globe2 className="h-4 w-4" />
@@ -452,6 +453,31 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
       </DropdownMenuContent>
     </DropdownMenu>
   ), [language]);
+
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    const handleGenerationStart = () => {
+      setIsGenerating(true);
+    };
+    const handleGenerationEnd = () => {
+      setIsGenerating(false);
+    };
+
+    // Use 'as EventListener' to properly type the event handlers
+    window.addEventListener('generationStart', handleGenerationStart as EventListener);
+    window.addEventListener('generationEnd', handleGenerationEnd as EventListener);
+
+    return () => {
+      window.removeEventListener('generationStart', handleGenerationStart as EventListener);
+      window.removeEventListener('generationEnd', handleGenerationEnd as EventListener);
+    };
+  }, []);
+
+  const handleInterrupt = () => {
+    cleanupSession();
+    setIsGenerating(false);
+  };
 
   return (
     <>
@@ -550,7 +576,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
             </SidebarMenu>
           </SidebarGroup>
           <SidebarGroup>
-            <SidebarGroupLabel>Local AI</SidebarGroupLabel>
+            <SidebarGroupLabel>Offline AI</SidebarGroupLabel>
             <SidebarMenu>
               {downloadProgress && (
               <SidebarMenuItem>
@@ -564,6 +590,20 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
               )}
               {compressionMenu}
               {translationMenu}
+              {isGenerating && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={handleInterrupt}
+                    className="w-full justify-between text-red-500 hover:text-red-600 hover:bg-red-100 dark:hover:bg-red-950"
+                    tooltip="Stop Generation"
+                  >
+                    <div className="flex items-center">
+                      <StopCircle className="h-4 w-4" />
+                      <span className="ml-2 group-data-[state=collapsed]:hidden">Stop Generation</span>
+                    </div>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroup>
         </SidebarContent>

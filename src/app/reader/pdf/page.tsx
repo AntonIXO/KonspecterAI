@@ -17,9 +17,6 @@ import { Input } from "@/components/ui/input";
 import { useSwipeable } from "react-swipeable";
 import { useText } from '@/lib/TextContext';
 import { compressWithChromeAI as compressWithChromeAI } from '@/utils/chromeai';
-import { Skeleton } from "@/components/ui/skeleton";
-import ReactMarkdown from "react-markdown";
-import { detectLanguage } from '@/utils/chromeai';
 import { translateText } from '@/utils/chromeai';
 import CompressedView from "@/components/CompressedView";
 
@@ -39,6 +36,7 @@ interface PDFPageProps {
   onItemClick: ({ pageNumber }: { pageNumber: string | number }) => void;
   onLoadSuccess: ({ numPages }: { numPages: number }) => void;
   onPageLoadSuccess: (dimensions: PageDimensions) => void;
+  options: any;
 }
 
 // Add new interface for page dimensions
@@ -46,6 +44,11 @@ interface PageDimensions {
   width: number;
   height: number;
 }
+
+// Move options memoization outside the component
+const documentOptions = {
+  enableHWA: true,
+} as const;
 
 // Update CompressedView component
 const PDFPage = memo<PDFPageProps>(({ 
@@ -55,7 +58,8 @@ const PDFPage = memo<PDFPageProps>(({
   scale, 
   onItemClick, 
   onLoadSuccess,
-  onPageLoadSuccess 
+  onPageLoadSuccess,
+  options
 }) => {
   return (
     <Document
@@ -63,9 +67,7 @@ const PDFPage = memo<PDFPageProps>(({
       onLoadSuccess={onLoadSuccess}
       className="max-w-full pdf-container relative"
       onItemClick={onItemClick}
-      options={useMemo(() => ({
-        enableHWA: true,
-      }), [])}
+      options={options}
     >
       <Page
         pageNumber={currentPage}
@@ -102,7 +104,7 @@ export default function PDFReader() {
   const [streamingContent, setStreamingContent] = useState<string>('');
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
+  // const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
   const [translatedContent, setTranslatedContent] = useState<string>('');
   const [isTranslating, setIsTranslating] = useState(false);
 
@@ -280,6 +282,23 @@ export default function PDFReader() {
     loadPdf();
   }, [file, clearContent]);
 
+  // Helper function to handle sentence boundaries
+  const processSentenceBoundaries = useCallback((text: string) => {
+    // Find the last sentence ending punctuation
+    const lastSentenceEnd = text.search(/[.!?][^.!?]*$/);
+    
+    if (lastSentenceEnd === -1) {
+      // No sentence ending found, entire text might be incomplete
+      return { completeText: '', incompleteText: text };
+    }
+    
+    // Split at the last sentence ending (+1 to include the punctuation)
+    const completeText = text.slice(0, lastSentenceEnd + 1);
+    const incompleteText = text.slice(lastSentenceEnd + 1).trim();
+    
+    return { completeText, incompleteText };
+  }, []);
+
   // Extract text content when page changes
   const extractPageContent = useCallback(async (pageNum: number) => {
     if (!pdfDocument) return;
@@ -290,16 +309,29 @@ export default function PDFReader() {
     try {
       const page = await pdfDocument.getPage(pageNum);
       const textContent = await page.getTextContent();
-      const pageText = textContent.items
+      const rawPageText = textContent.items
         .map((item: any) => item.str)
         .join(' ')
         .trim();
       
-      setPageContent(pageNum, pageText);
+      // Get incomplete text from previous page if it exists
+      const prevPageIncomplete = pagesContent[pageNum - 1]?.incompleteText || '';
+      
+      // Combine with current page text
+      const fullText = `${prevPageIncomplete} ${rawPageText}`.trim();
+      
+      // Process sentence boundaries
+      const { completeText, incompleteText } = processSentenceBoundaries(fullText);
+      
+      // Store both complete and incomplete parts
+      setPageContent(pageNum, {
+        text: completeText,
+        incompleteText: incompleteText
+      });
     } catch (error) {
       console.error('Error extracting text:', error);
     }
-  }, [pdfDocument, pagesContent, setPageContent]);
+  }, [pdfDocument, pagesContent, setPageContent, processSentenceBoundaries]);
 
   // Handle page changes
   useEffect(() => {
@@ -334,11 +366,12 @@ export default function PDFReader() {
     let isMounted = true;
 
     const processPage = async () => {
-      // Abort any ongoing compression
+      // Create new abort controller for this process
       if (abortController) {
         abortController.abort();
-        setAbortController(null);
       }
+      const controller = new AbortController();
+      setAbortController(controller);
 
       const currentText = compressionDeps.pagesContent[compressionDeps.currentPage];
       if (!currentText) {
@@ -349,24 +382,14 @@ export default function PDFReader() {
         return;
       }
 
-      // Handle compression if enabled
-      if (compressionDeps.compressionMode !== '1:1') {
-        setIsCompressing(true);
-        try {
-          const pagesToCompress = [compressionDeps.currentPage];
-          if (compressionDeps.compressionMode === '1:2' && 
-              compressionDeps.currentPage + 1 <= (compressionDeps.numPages || 1)) {
-            pagesToCompress.push(compressionDeps.currentPage + 1);
-          } else if (compressionDeps.compressionMode === '1:3' && 
-                    compressionDeps.currentPage + 2 <= (compressionDeps.numPages || 1)) {
-            pagesToCompress.push(compressionDeps.currentPage + 1, compressionDeps.currentPage + 2);
-          }
-
-          const textToCompress = pagesToCompress
-            .map(pageNum => compressionDeps.pagesContent[pageNum] || '')
-            .join('\n\n');
-
-          const result = await compressWithChromeAI(textToCompress, compressionDeps.compressionMode);
+      try {
+        // Handle compression if enabled
+        if (compressionDeps.compressionMode !== '1:1') {
+          setIsCompressing(true);
+          const result = await compressWithChromeAI(
+            currentText.text, 
+            compressionDeps.compressionMode
+          );
 
           if (result?.stream) {
             let fullContent = '';
@@ -379,38 +402,53 @@ export default function PDFReader() {
               setCompressedContent(fullContent);
             }
           }
-        } catch (error) {
-          if (error instanceof Error && error.name === 'AbortError') {
-            console.log('Compression aborted');
-          } else {
-            console.error('Compression error:', error);
-          }
-        } finally {
-          if (isMounted) {
-            setIsCompressing(false);
-            setAbortController(null);
-            setIsPending(false);
-          }
         }
-      }
 
-      // Handle translation if enabled
-      if (language !== 'disabled') {
-        setIsTranslating(true);
-        try {
-          const result = await translateText(currentText, language);
-          if (isMounted && result) {
-            setTranslatedContent(result.text);
+        // Handle translation if enabled
+        if (language !== 'disabled') {
+          setIsTranslating(true);
+          const result = await translateText(
+            currentText.text, 
+            language,
+            controller.signal
+          );
+
+          if (isMounted && result?.stream) {
+            let previousChunk = '';
+            let fullContent = '';
+            
+            for await (const chunk of result.stream()) {
+              if (!isMounted) break;
+              // Handle chunk the same way as in compression
+              const newChunk = chunk.startsWith(previousChunk)
+                ? chunk.slice(previousChunk.length)
+                : chunk;
+              
+              fullContent += newChunk;
+              setStreamingContent(fullContent);
+              previousChunk = chunk;
+            }
+            
+            if (isMounted) {
+              setTranslatedContent(fullContent);
+            }
           }
-        } catch (error) {
-          console.error('Translation error:', error);
-        } finally {
-          if (isMounted) {
-            setIsTranslating(false);
-          }
+        } else {
+          setTranslatedContent('');
+          setStreamingContent('');
         }
-      } else {
-        setTranslatedContent('');
+      } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+          console.log('Processing aborted');
+        } else {
+          console.error('Processing error:', error);
+        }
+      } finally {
+        if (isMounted) {
+          setIsCompressing(false);
+          setIsTranslating(false);
+          setIsPending(false);
+        }
       }
     };
 
@@ -433,36 +471,38 @@ export default function PDFReader() {
   }, [abortController]);
 
   // Add effect to detect language when needed
-  useEffect(() => {
-    let isMounted = true;
+  // useEffect(() => {
+  //   let isMounted = true;
 
-    const detectTextLanguage = async () => {
-      // Only detect language if translation is enabled and we have content
-      if (language === 'disabled' || !pagesContent[currentPage]) {
-        setDetectedLanguage(null);
-        return;
-      }
+  //   const detectTextLanguage = async () => {
+  //     // Only detect language if translation is enabled and we have content
+  //     if (language === 'disabled' || !pagesContent[currentPage]) {
+  //       setDetectedLanguage(null);
+  //       return;
+  //     }
 
-      try {
-        const result = await detectLanguage(pagesContent[currentPage]);
-        if (isMounted && result) {
-          setDetectedLanguage(result.language);
-        }
-      } catch (error) {
-        console.error('Language detection failed:', error);
-      }
-    };
+  //     try {
+  //       const result = await detectLanguage(pagesContent[currentPage]);
+  //       if (isMounted && result) {
+  //         setDetectedLanguage(result.language);
+  //       }
+  //     } catch (error) {
+  //       console.error('Language detection failed:', error);
+  //     }
+  //   };
 
-    detectTextLanguage();
-    return () => {
-      isMounted = false;
-    };
-  }, [currentPage, pagesContent, language]);
+  //   detectTextLanguage();
+  //   return () => {
+  //     isMounted = false;
+  //   };
+  // }, [currentPage, pagesContent, language]);
 
-  // Update the render method to properly handle both compression and translation
-  const displayContent = language !== 'disabled' ? translatedContent : 
-                          compressionMode !== '1:1' ? compressedContent : 
-                          null;
+  // Update the render method to show translated content with streaming
+  const displayContent = language !== 'disabled' ? 
+                        (streamingContent || translatedContent) : 
+                        compressionMode !== '1:1' ? 
+                        compressedContent : 
+                        null;
 
   if (!file) return null;
 
@@ -482,12 +522,12 @@ export default function PDFReader() {
 
           <Card 
             className="w-full overflow-hidden bg-white dark:bg-gray-950"
-            // style={{
-            //   height: compressionMode === '1:1' && pageDimensions.height > 0 
-            //     ? `${pageDimensions.height * scale}px` 
-            //     : 'auto',
-            //   transition: 'height 0.2s ease-in-out'
-            // }}
+            style={{
+              height: compressionMode === '1:1' && pageDimensions.height > 0 
+                ? `${pageDimensions.height * scale}px` 
+                : 'auto',
+              transition: 'height 0.2s ease-in-out'
+            }}
           >
             <CardContent className="p-2 sm:p-4 md:p-6">
               <div className="w-full flex flex-col items-center" {...swipeHandlers}>
@@ -501,6 +541,7 @@ export default function PDFReader() {
                     onItemClick={handleItemClick}
                     onLoadSuccess={onDocumentLoadSuccess}
                     onPageLoadSuccess={setPageDimensions}
+                    options={documentOptions} // Pass memoized options
                   />
                 ) : (
                   <CompressedView 

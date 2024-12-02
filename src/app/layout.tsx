@@ -4,7 +4,6 @@ import "./globals.css";
 import { FileProvider } from "@/lib/FileContext";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
-import Script from 'next/script';
 import { InstallPWA } from '@/components/InstallPWA';
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -54,11 +53,10 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="KonspecterAI" />
-        {/* Origin trials. Works only on Chrome */}
-        <meta httpEquiv="origin-trial" content={summarizerToken}></meta> {/* Summarizer API */}
-        <meta httpEquiv="origin-trial" content={translatorToken}></meta> {/* Translator API */}
-        <meta httpEquiv="origin-trial" content={languageDetectionToken}></meta> {/* Language Detection API */}
-        <meta httpEquiv="origin-trial" content={genaiToken}></meta> {/* Gen AI */}
+        <meta httpEquiv="origin-trial" content={summarizerToken}></meta>
+        <meta httpEquiv="origin-trial" content={translatorToken}></meta>
+        <meta httpEquiv="origin-trial" content={languageDetectionToken}></meta>
+        <meta httpEquiv="origin-trial" content={genaiToken}></meta>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

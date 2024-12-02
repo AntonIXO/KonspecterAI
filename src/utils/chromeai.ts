@@ -1,13 +1,26 @@
-import { compressionPrompt } from '@/lib/ai/propmts';
+import { compressionPrompt, translationFormatPrompt } from '@/lib/ai/propmts';
 import { toast } from 'sonner';
 
-// Keep track of the active sessions
-let activeSession: any = null;
-let sessionInitPromise: Promise<any> | null = null;
+// Keep track of the active sessions separately
+let activeCompressionSession: any = null;
+let compressionSessionInitPromise: Promise<any> | null = null;
+let activeTranslationSession: any = null;
+let translationSessionInitPromise: Promise<any> | null = null;
 let activeDetector: any = null;
 let detectorInitPromise: Promise<any> | null = null;
 let activeTranslator: any = null;
 let translatorInitPromise: Promise<any> | null = null;
+
+// Add these helper functions at the top of the file
+const dispatchGenerationStart = () => {
+  console.log('Dispatching generation start');
+  window.dispatchEvent(new CustomEvent('generationStart'));
+};
+
+const dispatchGenerationEnd = () => {
+  console.log('Dispatching generation end');
+  window.dispatchEvent(new CustomEvent('generationEnd'));
+};
 
 // Check if the Prompt API is available in the browser
 export const isPromptAPIAvailable = () => {
@@ -16,20 +29,23 @@ export const isPromptAPIAvailable = () => {
          'ai' in (window as any).self;
 };
 
-// Initialize session if needed
-async function getOrCreateSession() {
-  // Return existing session if it's already initialized
-  if (activeSession) {
-    return activeSession;
+export const isTranslationAPIAvailable = () => {
+  return 'translation' in window &&
+         'canDetect' in (window as any).translation &&
+         'createTranslator' in (window as any).translation;
+};
+
+// Initialize compression session if needed
+async function getOrCreateCompressionSession() {
+  if (activeCompressionSession) {
+    return activeCompressionSession;
   }
 
-  // Return existing initialization promise if it's in progress
-  if (sessionInitPromise) {
-    return sessionInitPromise;
+  if (compressionSessionInitPromise) {
+    return compressionSessionInitPromise;
   }
 
-  // Create new session
-  sessionInitPromise = (async () => {
+  compressionSessionInitPromise = (async () => {
     try {
       const capabilities = await (window as any).self.ai.languageModel.capabilities();
       
@@ -39,22 +55,12 @@ async function getOrCreateSession() {
         topK: capabilities.defaultTopK
       });
 
-      // Wait for the model to be ready if needed
       if (capabilities.available === 'after-download') {
         await new Promise((resolve) => {
-          const downloadProgress = {
-            loaded: 0,
-            total: 0
-          };
-          
           session.monitor((m: any) => {
             m.addEventListener('downloadprogress', (e: any) => {
-              downloadProgress.loaded = e.loaded;
-              downloadProgress.total = e.total;
-              
-              // Create a custom event to notify UI of download progress
               const event = new CustomEvent('modelDownloadProgress', { 
-                detail: downloadProgress 
+                detail: { loaded: e.loaded, total: e.total } 
               });
               window.dispatchEvent(event);
               
@@ -67,17 +73,68 @@ async function getOrCreateSession() {
         await session.ready;
       }
 
-      activeSession = session;
+      activeCompressionSession = session;
       return session;
     } catch (error) {
-      console.error('Failed to initialize session:', error);
+      console.error('Failed to initialize compression session:', error);
       throw error;
     } finally {
-      sessionInitPromise = null;
+      compressionSessionInitPromise = null;
     }
   })();
 
-  return sessionInitPromise;
+  return compressionSessionInitPromise;
+}
+
+// Initialize translation formatting session if needed
+async function getOrCreateTranslationSession() {
+  if (activeTranslationSession) {
+    return activeTranslationSession;
+  }
+
+  if (translationSessionInitPromise) {
+    return translationSessionInitPromise;
+  }
+
+  translationSessionInitPromise = (async () => {
+    try {
+      const capabilities = await (window as any).self.ai.languageModel.capabilities();
+      
+      const session = await (window as any).self.ai.languageModel.create({
+        systemPrompt: translationFormatPrompt,
+        temperature: capabilities.defaultTemperature,
+        topK: capabilities.defaultTopK
+      });
+
+      if (capabilities.available === 'after-download') {
+        await new Promise((resolve) => {
+          session.monitor((m: any) => {
+            m.addEventListener('downloadprogress', (e: any) => {
+              const event = new CustomEvent('modelDownloadProgress', { 
+                detail: { loaded: e.loaded, total: e.total } 
+              });
+              window.dispatchEvent(event);
+              
+              if (e.loaded === e.total) {
+                resolve(true);
+              }
+            });
+          });
+        });
+        await session.ready;
+      }
+
+      activeTranslationSession = session;
+      return session;
+    } catch (error) {
+      console.error('Failed to initialize translation session:', error);
+      throw error;
+    } finally {
+      translationSessionInitPromise = null;
+    }
+  })();
+
+  return translationSessionInitPromise;
 }
 
 // Initialize language detector if needed
@@ -181,7 +238,7 @@ async function getOrCreateTranslator(sourceLanguage: string, targetLanguage: str
       // Wait for the model to be ready if needed
       if (canTranslate === 'after-download') {
         await new Promise((resolve) => {
-          translator.addEventListener('downloadprogress', (e: any) => {
+          translator.ondownloadprogress = (e: any) => {
             const event = new CustomEvent('modelDownloadProgress', { 
               detail: { loaded: e.loaded, total: e.total } 
             });
@@ -190,7 +247,7 @@ async function getOrCreateTranslator(sourceLanguage: string, targetLanguage: str
             if (e.loaded === e.total) {
               resolve(true);
             }
-          });
+          };
         });
         await translator.ready;
       }
@@ -210,14 +267,13 @@ async function getOrCreateTranslator(sourceLanguage: string, targetLanguage: str
   return translatorInitPromise;
 }
 
-// Add translation function
-export async function translateText(text: string, targetLanguage: string) {
+// Update translation function to use translation session
+export async function translateText(text: string, targetLanguage: string, signal?: AbortSignal) {
   try {
-    // First detect the source language
+    dispatchGenerationStart();
     const detector = await getOrCreateDetector();
     const results = await detector.detect(text);
     
-    // Get the most likely language
     const [topResult] = results;
     if (!topResult || topResult.confidence < 0.5) {
       throw new Error('Could not detect source language confidently');
@@ -225,30 +281,113 @@ export async function translateText(text: string, targetLanguage: string) {
 
     const sourceLanguage = topResult.detectedLanguage;
     
-    // Don't translate if source and target are the same
     if (sourceLanguage === targetLanguage) {
       return { text, sourceLanguage };
     }
 
-    // Get translator for the language pair
     const translator = await getOrCreateTranslator(sourceLanguage, targetLanguage);
-    
-    // Translate the text
     const translatedText = await translator.translate(text);
+
+    const session = await getOrCreateTranslationSession();
+    const formatPrompt = `Format this translated text:\n${translatedText}`;
     
+    const stream = await session.promptStreaming(formatPrompt, { signal });
+
     return {
-      text: translatedText,
-      sourceLanguage
+      stream: async function* () {
+        try {
+          for await (const chunk of stream) {
+            yield chunk;
+          }
+        } catch (error) {
+          if (error instanceof Error && error.name === 'AbortError') {
+            throw error;
+          }
+          console.error('Stream error:', error);
+        } finally {
+          dispatchGenerationEnd();
+        }
+      }
     };
   } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.log('Translation aborted');
+      dispatchGenerationEnd();
+      throw error;
+    }
     console.error('Translation error:', error);
     toast.error('Translation failed');
     return null;
   }
 }
 
-// Clean up sessions
+// Update compression function to use compression session
+export async function compressWithChromeAI(text: string, compressionMode: string) {
+  try {
+    dispatchGenerationStart();
+    const session = await getOrCreateCompressionSession();
+    const controller = new AbortController();
+
+    const prompt = `Compress the following text to ${compressionMode === '1:2' ? 'half' : 'one-third'} of its original length while preserving key information:
+
+${text}`;
+
+    const stream = await session.promptStreaming(prompt, { signal: controller.signal });
+
+    return {
+      stream: async function* () {
+        let previousChunk = '';
+        try {
+          for await (const chunk of stream) {
+            const newChunk = chunk.startsWith(previousChunk)
+              ? chunk.slice(previousChunk.length)
+              : chunk;
+            yield newChunk;
+            previousChunk = chunk;
+          }
+        } catch (error) {
+          if (error instanceof Error && error.name === 'AbortError') {
+            console.log('Prompt aborted');
+            dispatchGenerationEnd();
+          } else {
+            console.error('Streaming error:', error);
+          }
+        } finally {
+          dispatchGenerationEnd();
+        }
+      },
+      cancel: () => {
+        controller.abort();
+      }
+    };
+  } catch (error) {
+    console.error('Chrome Prompt API error:', error);
+    toast.error('Prompt API is not usable at the moment');
+    return null;
+  }
+}
+
+// Update cleanup function to handle all sessions
 export function cleanupSession() {
+  dispatchGenerationEnd();
+  if (activeTranslationSession) {
+    try {
+      activeTranslationSession.destroy();
+    } catch (error) {
+      console.error('Error cleaning up translation session:', error);
+    }
+    activeTranslationSession = null;
+  }
+
+  if (activeCompressionSession) {
+    try {
+      activeCompressionSession.destroy();
+    } catch (error) {
+      console.error('Error cleaning up compression session:', error);
+    }
+    activeCompressionSession = null;
+  }
+
   if (activeTranslator) {
     try {
       activeTranslator.destroy();
@@ -265,15 +404,6 @@ export function cleanupSession() {
       console.error('Error cleaning up detector:', error);
     }
     activeDetector = null;
-  }
-
-  if (activeSession) {
-    try {
-      activeSession.destroy();
-    } catch (error) {
-      console.error('Error cleaning up session:', error);
-    }
-    activeSession = null;
   }
 }
 
@@ -296,64 +426,6 @@ export async function detectLanguage(text: string) {
   } catch (error) {
     console.error('Language detection error:', error);
     toast.error('Language detection failed');
-    return null;
-  }
-}
-
-export async function compressWithChromeAI(text: string, compressionMode: string) {
-  try {
-    // Get or create session
-    const session = await getOrCreateSession();
-
-    // Create abort controller for this specific prompt
-    const controller = new AbortController();
-
-    // Create the prompt based on compression mode
-    const prompt = `Compress the following text to ${compressionMode === '1:2' ? 'half' : 'one-third'} of its original length while preserving key information:
-
-${text}`;
-
-    // Use streaming for better UX with abort signal
-    const stream = await session.promptStreaming(prompt, { signal: controller.signal });
-
-    // Return an async generator that yields summary chunks
-    return {
-      stream: async function* () {
-        let previousChunk = '';
-        try {
-          for await (const chunk of stream) {
-            const newChunk = chunk.startsWith(previousChunk)
-              ? chunk.slice(previousChunk.length)
-              : chunk;
-            yield newChunk;
-            previousChunk = chunk;
-          }
-        } catch (error) {
-          if (error instanceof Error && error.name === 'AbortError') {
-            console.log('Prompt aborted');
-          } else {
-            console.error('Streaming error:', error);
-            // Only cleanup session on non-abort errors
-            if (error instanceof Error && error.message?.includes('session')) {
-              cleanupSession();
-            }
-          }
-        }
-      },
-      cancel: () => {
-        controller.abort();
-      }
-    };
-
-  } catch (error) {
-    console.error('Chrome Prompt API error:', error);
-    toast.error('Prompt API is not usable at the moment');
-    
-    // Only cleanup session on session-related errors
-    if (error instanceof Error && error.message?.includes('session')) {
-      cleanupSession();
-    }
-    
     return null;
   }
 }

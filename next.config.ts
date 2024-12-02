@@ -58,7 +58,7 @@ const nextConfig: NextConfig = {
 };
 
 const config = process.env.NODE_ENV === 'production'
-  ? MillionLint.next({ rsc: true, optimizeDOM: true, experimental: { stabilize: true } })(withSerwist(nextConfig))
+  ? MillionLint.next({ rsc: true, optimizeDOM: true })(withSerwist(nextConfig))
   : nextConfig;
 
 export default config;

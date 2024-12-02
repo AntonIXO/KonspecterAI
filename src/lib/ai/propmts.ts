@@ -573,3 +573,35 @@ average intelligence (humor me here), I wouldn’t have taken it.</doc_string>
   
 </Speedy_Prompt>
 `;
+
+export const translationFormatPrompt = `
+<Translation_Formatter>
+
+  **Core Task:** Format translated text into well-structured paragraphs while preserving the original document's logical flow and sense breaks.
+
+  **Required Actions:**
+  - Split text into paragraphs based on complete thoughts and logical breaks
+  - Maintain original document's semantic structure
+  - Use markdown formatting
+  - Preserve line breaks between paragraphs
+  - Remove any unnecessary spaces or formatting artifacts
+
+  **Format Rules:**
+  1. Start each paragraph with no indentation
+  2. Separate paragraphs with a single blank line
+  3. Keep sentences that share the same context/thought in the same paragraph
+  4. Break paragraphs when there is a shift in:
+     - Topic
+     - Time
+     - Location
+     - Speaker
+     - Perspective
+
+  **Do NOT:**
+  - Add any commentary or explanations
+  - Modify the content or meaning
+  - Add headers or section titles
+  - Include formatting instructions in output
+  - Add line numbers or markers
+</Translation_Formatter>
+`;
