@@ -1,7 +1,7 @@
 'use server';
 
 import { convertToCoreMessages, Message, tool, streamText } from "ai";
-import { geminiFlashModel } from "@/lib/ai";
+import { geminiProModel } from "@/lib/ai";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
 import { prompt } from '../../../lib/ai/propmts';
@@ -20,13 +20,13 @@ export async function POST(request: Request) {
       },
     });
   }
-  const { messages, path }: { messages: Array<Message>, path: string } = await request.json();
+  const { messages, bookId }: { messages: Array<Message>, bookId: number } = await request.json();
   const coreMessages = convertToCoreMessages(messages).filter(
     (message) => message.content.length > 0,
   );
 
   const result = streamText({
-    model: geminiFlashModel, // Pro could out of requests if multiple steps
+    model: geminiProModel,
     system: prompt,
     messages: coreMessages,
     experimental_continueSteps: true,
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
         parameters: z.object({
           question: z.string().describe('the users question'),
         }),
-        execute: async ({ question }) => findRelevantContent({ question, user_id: user.id, path }),
+        execute: async ({ question }) => findRelevantContent({ question, user_id: user.id, bookId }),
       }),
     },
   });
@@ -51,13 +51,13 @@ export async function POST(request: Request) {
   return result.toDataStreamResponse();
 }
 
-async function findRelevantContent({ question, user_id, path }: { question: string, user_id: string, path: string }) {
+async function findRelevantContent({ question, user_id, bookId }: { question: string, user_id: string, bookId: number }) {
   const supabase = await createClient();
   const { data, error } = await supabase.functions.invoke('search', {
     body: { 
       search: question,
       user_id: user_id,
-      path: path
+      bookId: bookId
      }
   });
 

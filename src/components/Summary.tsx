@@ -20,12 +20,12 @@ interface SummaryProps {
 
 export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProps) {
     const { getPageRange } = useText();
-    const { filename } = useFile();
+    const { currentBookId } = useFile();
     const { messages, input, handleInputChange, handleSubmit, isLoading, append, setMessages, stop } = useChat({
         api: '/api/summarize',
         id: 'summary-chat',
         body: {
-            path: filename,
+            bookId: currentBookId,
         },
         maxSteps: 3,
     });
