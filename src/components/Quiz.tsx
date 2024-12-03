@@ -44,6 +44,7 @@ interface QuizProps {
 
 export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizProps) {
   const { getPageRange } = useText();
+  const { currentPage, currentBookId } = useFile();
   const [questions, setQuestions] = useState<Question[]>(initialQuiz?.questions || [])
   const [userAnswers, setUserAnswers] = useState<number[]>([])
   const [showResults, setShowResults] = useState(false)
@@ -52,7 +53,6 @@ export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizPro
   const [publicId, setPublicId] = useState<string>()
 
   const router = useRouter()
-  const { filename } = useFile();
 
   // Modified useEffect to only use TextContext
   React.useEffect(() => {
@@ -60,7 +60,7 @@ export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizPro
       setQuestions(initialQuiz.questions);
       setUserAnswers(new Array(initialQuiz.questions.length).fill(-1));
     } else if (open && !questions.length && !loading) {
-      const textToQuiz = getPageRange(1, 8);
+      const textToQuiz = getPageRange(currentPage - 10, currentPage);
       handleGenerateQuiz(textToQuiz);
     }
   }, [open, initialQuiz, questions.length, loading]);
@@ -152,11 +152,11 @@ export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizPro
       })
     }
   }
-  if (!filename) return;
+  if (!currentBookId) return;
 
   const handleSave = async () => {
     try {
-      const id = await saveQuiz({ questions }, filename);
+      const id = await saveQuiz({ questions }, currentBookId);
       setPublicId(id);
       toast.success("Quiz saved successfully!");
     } catch (error) {
@@ -170,7 +170,7 @@ export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizPro
       let shareId = publicId;
       if (!shareId) {
         // Save and get the ID directly without relying on state
-        shareId = await saveQuiz({ questions }, filename);
+        shareId = await saveQuiz({ questions }, currentBookId);
         setPublicId(shareId); // Update state for future use
       }
       const url = `${window.location.origin}/quiz/${shareId}`; // Use the local variable instead of state
@@ -412,7 +412,7 @@ export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizPro
             )}
             {questions.length > 0 && showResults && (
               <Button onClick={() => {
-                const textToQuiz = Object.values(pagesContent).join('\n\n');
+                const textToQuiz = getPageRange(currentPage - 10, currentPage);
                 handleGenerateQuiz(textToQuiz);
               }}>
                 Try New Quiz

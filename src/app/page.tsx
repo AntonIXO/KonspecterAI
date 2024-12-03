@@ -13,7 +13,6 @@ import { getBooks, uploadFile, getBookUrl, deleteBook, renameBook } from "@/lib/
 import { User } from "@supabase/supabase-js";
 import { toast } from 'sonner';
 import { pdfjs } from "react-pdf";
-import { FileObject } from "@supabase/storage-js";
 import { Progress } from "@/components/ui/progress";
 import { Book } from "@/lib/storage";
 import { RenameDialog } from "@/components/rename-dialog";

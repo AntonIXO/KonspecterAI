@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useMemo, memo } from "react";
+import { useCallback, useEffect, useState, useMemo, memo, useRef } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { Button } from "@/components/ui/button";
 import { useFile } from "@/lib/FileContext";
@@ -20,6 +20,8 @@ import { compressWithChromeAI as compressWithChromeAI } from '@/utils/chromeai';
 import { translateText } from '@/utils/chromeai';
 import CompressedView from "@/components/CompressedView";
 import { updateReadProgress } from "@/lib/progress-tracker";
+import { QuizPrompt } from "@/components/quiz-prompt";
+import { Quiz } from "@/components/Quiz";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -107,6 +109,10 @@ export default function PDFReader() {
   // const [detectedLanguage, setDetectedLanguage] = useState<string | null>(null);
   const [translatedContent, setTranslatedContent] = useState<string>('');
   const [isTranslating, setIsTranslating] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [showQuizPrompt, setShowQuizPrompt] = useState(false);
+  const lastQuizPage = useRef(0);
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
     if (!file) {
@@ -485,6 +491,39 @@ export default function PDFReader() {
                         compressedContent : 
                         null;
 
+  // Update quiz prompt logic
+  useEffect(() => {
+    if (!currentBookId || currentPage <= 1) return;
+
+    // Skip quiz prompt on initial file load
+    if (isInitialLoad.current) {
+      isInitialLoad.current = false;
+      lastQuizPage.current = currentPage; // Set initial page as last quiz page
+      return;
+    }
+
+    const pagesSinceLastQuiz = currentPage - lastQuizPage.current;
+    
+    // Show quiz prompt every 10 pages
+    if (pagesSinceLastQuiz >= 11) {
+      setShowQuizPrompt(true);
+      lastQuizPage.current = currentPage;
+    }
+  }, [currentPage, currentBookId]);
+
+  // Reset initial load state when file changes
+  useEffect(() => {
+    if (file) {
+      isInitialLoad.current = true;
+    }
+  }, [file]);
+
+  // Handle starting the quiz from the prompt
+  const handleStartQuiz = useCallback(() => {
+    setShowQuizPrompt(false);
+    setShowQuiz(true);
+  }, []);
+
   if (!file) return null;
 
   return (
@@ -622,6 +661,17 @@ export default function PDFReader() {
         </Button>
       </div>
       <ReaderSidebar variant="floating" className="z-50"/>
+      
+      {/* Add quiz components at the end */}
+      <QuizPrompt 
+        open={showQuizPrompt}
+        onOpenChange={setShowQuizPrompt}
+        onStartQuiz={handleStartQuiz}
+      />
+      <Quiz 
+        open={showQuiz}
+        setOpen={setShowQuiz}
+      />
     </div>
   );
 }
