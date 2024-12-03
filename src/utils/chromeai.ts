@@ -33,8 +33,9 @@ const dispatchDownloadProgress = (loaded: number, total: number) => {
 
 // Check if the Prompt API is available in the browser
 export const isPromptAPIAvailable = () => {
-  return 'ai' in window && 
-         'rewriter' in (window as any).ai;
+  return 'chrome' in window && 
+         'self' in window &&
+         'ai' in (window as any).self;
 };
 
 export const isTranslationAPIAvailable = () => {
@@ -44,7 +45,7 @@ export const isTranslationAPIAvailable = () => {
 };
 
 // Initialize rewriter if needed
-async function getOrCreateRewriter() {
+async function getOrCreateCompressionSession() {
   if (activeCompressionSession) {
     return activeCompressionSession;
   }
@@ -55,42 +56,37 @@ async function getOrCreateRewriter() {
 
   compressionSessionInitPromise = (async () => {
     try {
-      // const capabilities = await (window as any).ai.rewriter.capabilities();
+      const capabilities = await (window as any).self.ai.languageModel.capabilities();
       
-      // if (capabilities.available === 'no') {
-      //   throw new Error('rewriter API is not available');
-      // }
-
-      const rewriter = await (window as any).ai.rewriter.create({
-        tone: 'as-is',
-        format: 'markdown',
-        length: 'shorter',
-        sharedContext: compressionPrompt
+      const session = await (window as any).self.ai.languageModel.create({
+        systemPrompt: compressionPrompt,
+        temperature: capabilities.defaultTemperature,
+        topK: capabilities.defaultTopK
       });
 
-      // if (capabilities.available === 'after-download') {
-      //   toast.info('Downloading rewriter model...');
-      //   await new Promise((resolve) => {
-      //     rewriter.addEventListener('downloadprogress', (e: any) => {
-      //       dispatchDownloadProgress(e.loaded, e.total);
-      //       if (e.loaded === e.total) {
-      //         resolve(true);
-      //       }
-      //     });
-      //   });
-      //   await rewriter.ready;
-      // }
+      if (capabilities.available === 'after-download') {
+        toast.info('Downloading compression model...');
+        await new Promise((resolve) => {
+          session.monitor((m: any) => {
+            m.addEventListener('downloadprogress', (e: any) => {
+              dispatchDownloadProgress(e.loaded, e.total);
+              if (e.loaded === e.total) {
+                resolve(true);
+              }
+            });
+          });
+        });
+        await session.ready;
+      }
 
-      activeCompressionSession = rewriter;
-      return rewriter;
+      activeCompressionSession = session;
+      return session;
     } catch (error) {
-      console.error('Failed to initialize rewriter:', error);
+      console.error('Failed to initialize compression session:', error);
       throw error;
-    } finally {
-      compressionSessionInitPromise = null;
     }
   })();
-
+  
   return compressionSessionInitPromise;
 }
 
@@ -302,42 +298,43 @@ export async function translateText(text: string, targetLanguage: string) {
 export async function compressWithChromeAI(text: string, compressionMode: string) {
   try {
     dispatchGenerationStart();
-    const rewriter = await getOrCreateRewriter();
+    const session = await getOrCreateCompressionSession();
+    const controller = new AbortController();
 
-    // Configure options based on compression mode
-    const options = {
-      context: `Rewrite this content to about ${compressionMode === '1:2' ? 'half' : 'one-third'} its original length`
-    };
+    const prompt = `Compress the following text to ${compressionMode === '1:2' ? 'half' : 'one-third'} of its original length while preserving key information:
 
-    // Use streaming summarization
-    const stream = await rewriter.rewriteStreaming(text, options);
+${text}`;
+
+    const stream = await session.promptStreaming(prompt, { signal: controller.signal });
 
     return {
       stream: async function* () {
-        let previousLength = 0;
+        let previousChunk = '';
         try {
-          for await (const segment of stream) {
-            const newContent = segment.slice(previousLength);
-            previousLength = segment.length;
-            yield newContent;
+          for await (const chunk of stream) {
+            const newChunk = chunk.startsWith(previousChunk)
+              ? chunk.slice(previousChunk.length)
+              : chunk;
+            yield newChunk;
+            previousChunk = chunk;
           }
         } catch (error) {
           if (error instanceof Error && error.name === 'AbortError') {
+            console.log('Prompt aborted');
           } else {
             console.error('Streaming error:', error);
           }
+        } finally {
+          dispatchGenerationEnd();
         }
       },
       cancel: () => {
-        if (stream.cancel) {
-          stream.cancel();
-        }
+        controller.abort();
       }
     };
   } catch (error) {
-    console.error('rewriter API error:', error);
-    toast.error('rewriter API is not usable at the moment');
-    dispatchGenerationEnd();
+    console.error('Chrome Prompt API error:', error);
+    toast.error('Prompt API is not usable at the moment');
     return null;
   }
 }

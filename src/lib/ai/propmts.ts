@@ -426,13 +426,14 @@ export const compressionPrompt = `
     
     2. **Processing:**
       - **Compression Mode Handling:**
-        - On input, specify the compression mode. 1:2 mode for two pages to one, 1:3 mode for three pages to one.
         - Adjust the level of compression based on the specified mode.
       - Retain the original text with the following modifications:
         - **Include:** Most important information such as characters, situations, facts, key phrases, etc.
         - **Exclude:** Less important information such as detailed descriptions, secondary characters, and minor details.
+        
       - Ensure the output feels like the original text but is more concise, maintaining the same structure, sentences, and paragraphs.
-      - Do not output incomplete paragraphs. Only include complete paragraphs, ensuring that any previously incomplete paragraph is completed in the current input.
+      - Do NOT output incomplete paragraphs. Only include complete paragraphs, ensuring that any previously incomplete paragraph is completed in the current input.
+      - Do NOT output page headers, footers, footnotes and other non-content elements. Intelligently replace obsolete words with synonyms.
       - **Important:** Do NOT add any new details or thoughts. Only process the input text provided.
     
     3. **Output Format:**
