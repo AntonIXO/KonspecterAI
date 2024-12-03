@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
       book_id: bookId,
       text: text,
       embedding: embedding,
+      user_id: user.id,
     })
     
     if (error) {

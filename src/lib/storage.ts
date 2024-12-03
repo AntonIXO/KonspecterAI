@@ -105,20 +105,16 @@ export async function deleteBook(bookId: number, userId: string, originalName: s
     if (embeddingsError) throw embeddingsError;
 
     // Delete related summaries
-    const { error: summariesError } = await supabase
+    await supabase
       .from('summaries')
       .delete()
       .eq('book_id', bookId);
 
-    if (summariesError) throw summariesError;
-
     // Delete related quizzes
-    const { error: quizzesError } = await supabase
+    await supabase
       .from('quizzes')
       .delete()
       .eq('book_id', bookId);
-
-    if (quizzesError) throw quizzesError;
 
     // Then delete from database
     const { error: dbError } = await supabase

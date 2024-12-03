@@ -7,6 +7,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { Database } from "../_shared/database.types.ts";
+import { corsHeaders } from '../_shared/cors.ts'
 
 const supabase = createClient<Database>(
   Deno.env.get("SUPABASE_URL")!,
@@ -16,8 +17,22 @@ const supabase = createClient<Database>(
 const model = new Supabase.ai.Session("gte-small");
 
 Deno.serve(async (req) => {
+  // Add OPTIONS check for CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   const { search, user_id, bookId } = await req.json();
-  if (!search || !user_id || !bookId) return new Response("Please provide a search param!");
+  if (!search || !user_id || !bookId) {
+    return new Response(
+      JSON.stringify({ error: "Please provide all required parameters" }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400 
+      }
+    );
+  }
+
   // Generate embedding for search term.
   const embedding = await model.run(search, {
     mean_pool: true,
@@ -35,8 +50,20 @@ Deno.serve(async (req) => {
     .select("text")
     .limit(3);
   if (error) {
-    return Response.json(error);
+    return new Response(
+      JSON.stringify({ error }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400 
+      }
+    );
   }
 
-  return Response.json({ result });
+  return new Response(
+    JSON.stringify({ result }),
+    { 
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      status: 200 
+    }
+  );
 });
