@@ -41,6 +41,7 @@ import { isPromptAPIAvailable, cleanupSession, isTranslationAPIAvailable } from 
 import { ModelDownloadProgress } from "@/components/ModelDownloadProgress"
 import { cn } from "@/lib/utils"
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/components/ui/sidebar"
+import { BookProgress } from "@/components/book-progress"
 
 // Add proper type definitions
 type MenuItem = {
@@ -86,7 +87,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
 }: ReaderSidebarProps) {
   const [data, setData] = useState(baseData); // Initialize state with baseData
   const { state, compressionMode, setCompressionMode, setLanguage, language } = useSidebar();
-  const { currentBookId } = useFile();
+  const { currentBookId, currentPage } = useFile();
 
   const supabase = createClient()
 
@@ -101,6 +102,29 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
 
   // Add selectedText state
   const [selectedText, setSelectedText] = useState<string>("");
+
+  const [numPages, setNumPages] = useState<number | null>(null);
+
+  useEffect(() => {
+    const fetchNumPages = async () => {
+      if (!currentBookId) return;
+
+      const { data: book, error } = await supabase
+        .from('books')
+        .select('pages')
+        .eq('id', currentBookId)
+        .single();
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      setNumPages(book.pages);
+    };
+
+    fetchNumPages();
+  }, [currentBookId]);
 
   // Add effect to close sections when sidebar collapses
   useEffect(() => {
@@ -477,7 +501,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
             </div>
           </Link>
         </SidebarHeader>
-        <SidebarContent>          
+        <SidebarContent>
           <SidebarGroup className="mb-4">
             <SidebarMenu>
               <SidebarMenuItem>
@@ -578,6 +602,16 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
+          </SidebarGroup>
+          <SidebarGroup>
+          <SidebarGroupLabel>Book Progress</SidebarGroupLabel>
+            {state !== 'collapsed' && (
+              <BookProgress 
+                currentPage={currentPage}
+                totalPages={numPages}
+                className="mt-2"
+              />
+            )}
           </SidebarGroup>
         </SidebarContent>
         <SidebarFooter>
