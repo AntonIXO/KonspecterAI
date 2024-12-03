@@ -39,7 +39,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-ollama/
 
 .env
 .env.local
@@ -54,3 +53,5 @@ public/swe-worker*
 
 .million/
 .chromeai/
+
+.vscode/settings.json

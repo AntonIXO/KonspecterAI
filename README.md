@@ -1,4 +1,4 @@
-# KonspecterAI - Smart Reading Assistant
+# KonspecterAI - Read smarter, Not harder | AI powered book reader.
 
 KonspecterAI is a modern web application built with Next.js that helps users read and analyze books more effectively using AI-powered features.
 
@@ -14,7 +14,8 @@ KonspecterAI is a modern web application built with Next.js that helps users rea
   - Chrome local AI:
     - Compression
     - Translation
-    - Embedding generation
+    - Language detection
+    - ~~Quiz generation~~ in future
   - Contextual understanding of content
 
 - **Authentication**
@@ -23,7 +24,6 @@ KonspecterAI is a modern web application built with Next.js that helps users rea
   - Google OAuth integration
 
 - **Modern UI**
-  - Responsive design using Tailwind CSS
   - Dark/Light mode support
   - Collapsible sidebar navigation
   - Mobile-friendly interface
@@ -39,9 +39,8 @@ KonspecterAI is a modern web application built with Next.js that helps users rea
 
 - **Backend & Services**
   - **ChromeAI** for local translation and compression
-  - **Supabase** for authentication and database
-  - **Gemini** for AI text processing
-  - **Docker** for containerization
+  - **Supabase** for authentication, database, storage and edge functions embedding generation
+  - **Gemini** for quiz and chat generation
 
 ## Getting Started
 
@@ -59,27 +58,16 @@ bun install
 ```bash
 cp .env.example .env.local
 ```
-Required variables:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 
 4. Start the development server:
 ```bash
-bun dev
+bun dev --turbo
 ```
 
 5. For production:
 ```bash
-bun build
-bun start
-```
-
-## Docker Deployment
-
-The project includes Docker support for easy deployment:
-
-```bash
-docker compose up -d
+bun run build
+bun run start
 ```
 
 ## Project Structure
@@ -87,8 +75,9 @@ docker compose up -d
 ```
 src/
 ├── app/                 # Next.js app router pages
-├── components/         # React components
-├── lib/               # Utilities and contexts
+├── components/          # React components
+├── lib/                 # Utilities and contexts
 ├── utils/             # Helper functions
 └── hooks/             # Custom React hooks
+supabase/             # Supabase project files
 ```
