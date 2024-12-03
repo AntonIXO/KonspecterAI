@@ -17,6 +17,7 @@ import { Progress } from "@/components/ui/progress";
 import { Book } from "@/lib/storage";
 import { RenameDialog } from "@/components/rename-dialog";
 import { CircularProgress } from "@/components/ui/circular-progress";
+import HeroVideoDialog from "@/components/ui/hero-video-dialog";
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
@@ -282,11 +283,24 @@ export default function Home() {
   };
 
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <h1 className="text-5xl sm:text-6xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-violet-500 bg-clip-text text-transparent">
-        KonspecterAI
-      </h1>
-      <main className="flex flex-col gap-8 row-start-2 items-center w-full max-w-6xl">
+    <div className="flex flex-col min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+      {/* Header Section */}
+      <header className="flex flex-col items-center gap-8 w-full max-w-6xl mx-auto">
+        <h1 className="text-5xl sm:text-6xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-violet-500 bg-clip-text text-transparent">
+          KonspecterAI
+        </h1>
+        
+        <HeroVideoDialog
+          videoSrc="https://youtu.be/EK9oM1SHyf4"
+          thumbnailSrc="/pleasework.png"
+          thumbnailAlt="KonspecterAI Demo"
+          className="w-full max-w-2xl"
+          animationStyle="from-bottom"
+        />
+      </header>
+
+      {/* Main Content */}
+      <main className="flex flex-col gap-8 items-center w-full max-w-6xl mx-auto">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
           {/* Upload Card */}
           <div className="h-[200px] flex flex-col gap-4">
@@ -405,12 +419,14 @@ export default function Home() {
             </div>
           ))}
         </div>
-
-        <div className="fixed bottom-4 left-4 z-50">
-          <NavUser />
-        </div>
       </main>
 
+      {/* Nav User */}
+      <div className="fixed bottom-4 left-4 z-50">
+        <NavUser />
+      </div>
+
+      {/* Rename Dialog */}
       <RenameDialog
         book={bookToRename}
         isOpen={renameDialogOpen}
