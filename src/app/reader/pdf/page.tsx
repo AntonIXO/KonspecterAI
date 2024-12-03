@@ -19,6 +19,7 @@ import { useText } from '@/lib/TextContext';
 import { compressWithChromeAI as compressWithChromeAI } from '@/utils/chromeai';
 import { translateText } from '@/utils/chromeai';
 import CompressedView from "@/components/CompressedView";
+import { updateReadProgress } from "@/lib/progress-tracker";
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -89,9 +90,8 @@ PDFPage.displayName = 'PDFPage';
 
 export default function PDFReader() {
   const router = useRouter();
-  const { file } = useFile();
+  const { file, currentPage, setCurrentPage, currentBookId } = useFile();
   const [numPages, setNumPages] = useState<number | null>(null);
-  const [currentPage, setCurrentPage] = useState<number>(1);
   const [inputValue, setInputValue] = useState<string>(String(currentPage));
   const { state, compressionMode, language } = useSidebar();
   const [windowWidth, setWindowWidth] = useState<number>(maxWidth);
@@ -157,15 +157,17 @@ export default function PDFReader() {
     setCompressedContent('');
     setStreamingContent('');
     setIsPending(true);
-    setCurrentPage(prev => calculatePageJump(prev, 'next', numPages, compressionMode));
-  }, [numPages, compressionMode, calculatePageJump]);
+    const nextPage = calculatePageJump(currentPage, 'next', numPages, compressionMode);
+    setCurrentPage(nextPage);
+  }, [currentPage, numPages, compressionMode, calculatePageJump]);
 
   const goToPrevPage = useCallback(() => {
     setCompressedContent('');
     setStreamingContent('');
     setIsPending(true);
-    setCurrentPage(prev => calculatePageJump(prev, 'prev', numPages, compressionMode));
-  }, [numPages, compressionMode, calculatePageJump]);
+    const prevPage = calculatePageJump(currentPage, 'prev', numPages, compressionMode);
+    setCurrentPage(prevPage);
+  }, [currentPage, numPages, compressionMode, calculatePageJump]);
 
   // Update page input validation
   const validateAndSetPage = useCallback((newPage: number) => {
@@ -494,7 +496,7 @@ export default function PDFReader() {
         <div className="w-full max-w-6xl">
           <div className="flex items-center gap-4 mb-4">
             <SidebarTrigger />
-            <Button onClick={() => router.push("/")} className="w-full md:w-auto">
+            <Button onClick={() => {router.push("/"); updateReadProgress(currentBookId || 0, currentPage)}} className="w-full md:w-auto">
               ← Back
             </Button>
           </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { updateReadProgress, getReadProgress } from './progress-tracker';
 
 interface FileContextType {
   file: File | null;
@@ -8,6 +9,8 @@ interface FileContextType {
   filename: string | null;
   currentBookId: number | null;
   setCurrentBookId: (id: number | null) => void;
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
 }
 
 const FileContext = createContext<FileContextType>({
@@ -16,17 +19,24 @@ const FileContext = createContext<FileContextType>({
   filename: null,
   currentBookId: null,
   setCurrentBookId: () => {},
+  currentPage: 1,
+  setCurrentPage: () => {},
 });
 
 export function FileProvider({ children }: { children: React.ReactNode }) {
   const [file, setFile] = useState<File | null>(null);
   const [filename, setFilename] = useState<string | null>(null);
   const [currentBookId, setCurrentBookId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Load file and book ID from localStorage on mount
+  // Ref to track if we need to save progress
+  const hasUnsavedProgress = useRef(false);
+
+  // Load from localStorage
   useEffect(() => {
     const savedFile = localStorage.getItem('lastOpenedFile');
     const savedBookId = localStorage.getItem('currentBookId');
+    const savedPage = localStorage.getItem('currentPage');
     
     if (savedFile) {
       const { name, type, data } = JSON.parse(savedFile);
@@ -44,16 +54,49 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
     if (savedBookId) {
       setCurrentBookId(Number(savedBookId));
     }
+    if (savedPage) {
+      setCurrentPage(Number(savedPage));
+    }
   }, []);
 
-  // Save file to localStorage when it changes
+  // Save progress handler
+  const saveProgress = useCallback(async () => {
+    if (!currentBookId || !hasUnsavedProgress.current || currentPage > 1) return;
+
+    const success = await updateReadProgress(currentBookId, currentPage);
+    if (success) {
+      hasUnsavedProgress.current = false;
+    }
+  }, [currentBookId, currentPage]);
+
+  // Auto-save progress every minute
+  useEffect(() => {
+    const interval = setInterval(saveProgress, 60000);
+    return () => clearInterval(interval);
+  }, [saveProgress]);
+
+  // Save progress on unmount or book change
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveProgress();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      saveProgress();
+    };
+  }, [saveProgress]);
+
   const handleSetFile = (newFile: File | null) => {
     setFile(newFile);
     setFilename(newFile?.name || null);
     if (!newFile) {
       setCurrentBookId(null);
+      setCurrentPage(1);
       localStorage.removeItem('lastOpenedFile');
       localStorage.removeItem('currentBookId');
+      localStorage.removeItem('currentPage');
       return;
     }
 
@@ -87,14 +130,29 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
     reader.readAsDataURL(newFile);
   };
 
-  const handleSetCurrentBookId = (id: number | null) => {
+  const handleSetCurrentBookId = async (id: number | null) => {
     setCurrentBookId(id);
     if (id) {
       localStorage.setItem('currentBookId', id.toString());
+      const lastPage = await getReadProgress(id);
+      if (lastPage > 0) {
+        setCurrentPage(lastPage);
+      } else {
+        setCurrentPage(1);
+      }
     } else {
       localStorage.removeItem('currentBookId');
+      setCurrentPage(1);
     }
   };
+
+  // Add this effect to track page changes
+  useEffect(() => {
+    if (currentBookId && currentPage > 0) {
+      hasUnsavedProgress.current = true;
+      localStorage.setItem('currentPage', currentPage.toString());
+    }
+  }, [currentPage, currentBookId]);
 
   return (
     <FileContext.Provider value={{ 
@@ -103,6 +161,8 @@ export function FileProvider({ children }: { children: React.ReactNode }) {
       filename,
       currentBookId,
       setCurrentBookId: handleSetCurrentBookId,
+      currentPage,
+      setCurrentPage,
     }}>
       {children}
     </FileContext.Provider>
