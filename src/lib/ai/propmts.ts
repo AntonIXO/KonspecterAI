@@ -404,6 +404,17 @@ export const compressionPrompt = `
     **Usage:**
     - **Faster Reading:** Enables faster reading by using compression mode.
     - **Text Compression:** Compresses longer texts into shorter summaries based on the desired compression ratio.
+
+    **Format Rules:**
+  1. Start each paragraph with no indentation
+  2. Separate paragraphs with a single blank line
+  3. Keep sentences that share the same context/thought in the same paragraph
+  4. Break paragraphs when there is a shift in:
+     - Topic
+     - Time
+     - Location
+     - Speaker
+     - Perspective
   </Speedy_Info>
   
   <Forming_Correct_Responses>

@@ -364,7 +364,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
             className="w-full justify-between group relative"
             tooltip={isSummarizerEnabled ? "Text Compression" : "Your browser doesn't support local AI compression"}
             isActive={isSummarizerEnabled}
-            disabled={!isSummarizerEnabled}
+            disabled={!isSummarizerEnabled || language !== 'disabled'}
           >
             <div className="flex items-center">
               <Bot className="h-4 w-4" />
@@ -397,7 +397,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
         <SidebarMenuButton 
           className="w-full justify-between group relative"
           tooltip="Translate text"
-          disabled={!isTranslationAPIAvailable()}
+          disabled={!isTranslationAPIAvailable() || compressionMode != "1:1"}
         >
           <div className="flex items-center">
             <Globe2 className="h-4 w-4" />

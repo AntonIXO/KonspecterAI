@@ -19,7 +19,7 @@ interface SummaryProps {
 }
 
 export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProps) {
-    const { pagesContent } = useText();
+    const { getPageRange } = useText();
     const { filename } = useFile();
     const { messages, input, handleInputChange, handleSubmit, isLoading, append, setMessages, stop } = useChat({
         api: '/api/summarize',
@@ -45,7 +45,7 @@ export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProp
             const startChat = async () => {
                 try {
                     if (messages.length === 0) {
-                        const textToSummarize = selectedText || Object.values(pagesContent).join('\n\n');
+                        const textToSummarize = selectedText || getPageRange(1, 8);
                         
                         await append({
                             role: 'user',

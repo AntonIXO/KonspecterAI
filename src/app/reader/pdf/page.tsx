@@ -481,33 +481,6 @@ export default function PDFReader() {
     };
   }, [abortController]);
 
-  // Add effect to detect language when needed
-  // useEffect(() => {
-  //   let isMounted = true;
-
-  //   const detectTextLanguage = async () => {
-  //     // Only detect language if translation is enabled and we have content
-  //     if (language === 'disabled' || !pagesContent[currentPage]) {
-  //       setDetectedLanguage(null);
-  //       return;
-  //     }
-
-  //     try {
-  //       const result = await detectLanguage(pagesContent[currentPage]);
-  //       if (isMounted && result) {
-  //         setDetectedLanguage(result.language);
-  //       }
-  //     } catch (error) {
-  //       console.error('Language detection failed:', error);
-  //     }
-  //   };
-
-  //   detectTextLanguage();
-  //   return () => {
-  //     isMounted = false;
-  //   };
-  // }, [currentPage, pagesContent, language]);
-
   // Update the render method to show translated content with streaming
   const displayContent = language !== 'disabled' ? 
                         (streamingContent || translatedContent) : 
