@@ -86,7 +86,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
 }: ReaderSidebarProps) {
   const [data, setData] = useState(baseData); // Initialize state with baseData
   const { state, compressionMode, setCompressionMode, setLanguage, language } = useSidebar();
-  const { filename } = useFile();
+  const { currentBookId } = useFile();
 
   const supabase = createClient()
 
@@ -125,17 +125,17 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
     }))
   , []);
 
-  // Update the fetch effects to use memoized transformations
+  // Update the fetch effects to use currentBookId
   useEffect(() => {
     const fetchSummaries = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user || !currentBookId) return;
 
       const { data: summariesData, error } = await supabase
         .from('summaries')
         .select('*')
         .order('created_at', { ascending: false })
-        .eq('path', filename)
+        .eq('book_id', currentBookId)
         .limit(5)
 
       if (error) {
@@ -144,8 +144,6 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
       }
 
       const summaryItems = transformedSummaryItems(summariesData);
-      
-      // Update the Summaries section in data
       setData(prev => ({
         aiFeatures: prev.aiFeatures.map(section => 
           section.title === "Summaries" 
@@ -155,15 +153,16 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
       }));
     }
     fetchSummaries()
-  }, [supabase, filename, transformedSummaryItems])
+  }, [supabase, currentBookId, transformedSummaryItems])
 
-  // Fetch quizzes and update 'Quiz' section
   useEffect(() => {
     const fetchQuizzes = async () => {
+      if (!currentBookId) return;
+
       const { data: quizzes, error } = await supabase
         .from('quizzes')
-        .select('public_id, title, path, created_at')
-        .eq('path', filename)
+        .select('public_id, title, created_at')
+        .eq('book_id', currentBookId)
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -173,8 +172,6 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
       }
 
       const quizItems = transformedQuizItems(quizzes);
-
-      // Update the Quiz section in data
       setData(prev => ({
         aiFeatures: prev.aiFeatures.map(section => 
           section.title === "Quiz" 
@@ -185,12 +182,12 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
     };
 
     fetchQuizzes();
-  }, [supabase, filename, transformedQuizItems]);
+  }, [supabase, currentBookId, transformedQuizItems]);
 
   const handleSaveSummary = async (text: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user || !currentBookId) {
         toast.error("Please login to save summaries");
         return;
       }
@@ -198,7 +195,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
       // Create new summary object
       const newSummary = {
         title: text.substring(0, 30) + '...',
-        url: `/summaries/${Date.now()}`, // Temporary ID until we get real one
+        url: `/summaries/${Date.now()}`,
         content: text,
       }
 
@@ -216,7 +213,7 @@ export const ReaderSidebar = React.memo(function ReaderSidebar({
       const { error } = await supabase.from('summaries').insert({
         user_id: user.id,
         content: text,
-        path: filename,
+        book_id: currentBookId,
         created_at: new Date().toISOString()
       })
 

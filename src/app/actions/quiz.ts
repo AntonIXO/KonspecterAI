@@ -5,8 +5,6 @@ import { geminiFlashModel } from "@/lib/ai";
 import { z } from 'zod';
 import { createClient } from "@/utils/supabase/server";
 
-// const model = isChromeAIAvailable
-
 const quizSchema = z.object({
   questions: z.array(
     z.object({
@@ -37,7 +35,7 @@ export async function generateQuiz(text: string) {
   return quiz;
 }
 
-export async function saveQuiz(quiz: Quiz, filename: string) {
+export async function saveQuiz(quiz: Quiz, bookId: number) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -51,7 +49,7 @@ export async function saveQuiz(quiz: Quiz, filename: string) {
       user_id: user.id,
       questions: quiz.questions,
       title: quiz.questions[0].question.substring(0, 50) + '...',
-      path: filename,
+      book_id: bookId,
     })
     .select('public_id')
     .single();

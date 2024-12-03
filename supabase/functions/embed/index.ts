@@ -12,46 +12,7 @@ import { corsHeaders } from '../_shared/cors.ts'
 
 const session = new Supabase.ai.Session('gte-small')
 
-// Utility function for semantic chunking
-// function semanticChunk(text: string, maxChunkSize: number = 500, minChunkSize: number = 50): string[] {
-//   // Remove newline characters and split text into sentences
-//   const sentences = text.replace(/\n/g, ' ').match(/[^\.!\?]+[\.!\?]+/g) || []
-//   const chunks: string[] = []
-//   let currentChunk = ''
-
-//   for (const sentence of sentences) {
-//     if ((currentChunk + sentence).length > maxChunkSize) {
-//       if (currentChunk) {
-//         chunks.push(currentChunk.trim())
-//         currentChunk = ''
-//       }
-//       if (sentence.length > maxChunkSize) {
-//         // Split long sentences
-//         let start = 0
-//         while (start < sentence.length) {
-//           const part = sentence.substring(start, start + maxChunkSize).trim()
-//           if (part.length >= minChunkSize) {
-//             chunks.push(part)
-//           }
-//           start += maxChunkSize
-//         }
-//       } else {
-//         currentChunk = sentence
-//       }
-//     } else {
-//       currentChunk += sentence
-//     }
-//   }
-
-//   if (currentChunk.trim().length >= minChunkSize) {
-//     chunks.push(currentChunk.trim())
-//   }
-
-//   return chunks
-// }
-
 Deno.serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -62,7 +23,6 @@ Deno.serve(async (req) => {
   );
 
   try {
-    // Get the session or user object
     const authHeader = req.headers.get('Authorization')!
     const token = authHeader.replace('Bearer ', '')
     const { data } = await supabase.auth.getUser(token)
@@ -78,10 +38,10 @@ Deno.serve(async (req) => {
       )
     }
 
-    const { text, path } = await req.json()
+    const { text, bookId } = await req.json()
 
-    if (!text || !path) {
-      throw new Error('Both text and path are required')
+    if (!text || !bookId) {
+      throw new Error('Both text and bookId are required')
     }
 
     // Generate embedding for the text
@@ -90,10 +50,9 @@ Deno.serve(async (req) => {
       normalize: true,
     })
 
-    // Insert into the 'books' table
-    const { error } = await supabase.from('books').insert({
-      user_id: user.id,
-      path: path,
+    // Insert into the 'embeddings' table
+    const { error } = await supabase.from('embeddings').insert({
+      book_id: bookId,
       text: text,
       embedding: embedding,
     })
@@ -110,8 +69,9 @@ Deno.serve(async (req) => {
       }
     )
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
     return new Response(
-      JSON.stringify({ error: error.message }), 
+      JSON.stringify({ error: errorMessage }), 
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400 

@@ -7,14 +7,17 @@ import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NavUser } from "@/components/nav-user";
 import { useDropzone } from 'react-dropzone';
-import { FilePlus, FileText, Loader2, X } from 'lucide-react';
+import { FilePlus, FileText, Loader2, X, Pencil } from 'lucide-react';
 import { useTheme } from "next-themes";
-import { getBooks, uploadFile, getBookUrl, deleteBook } from "@/lib/storage";
+import { getBooks, uploadFile, getBookUrl, deleteBook, renameBook } from "@/lib/storage";
 import { User } from "@supabase/supabase-js";
 import { toast } from 'sonner';
 import { pdfjs } from "react-pdf";
 import { FileObject } from "@supabase/storage-js";
 import { Progress } from "@/components/ui/progress";
+import { Book } from "@/lib/storage";
+import { RenameDialog } from "@/components/rename-dialog";
+import { CircularProgress } from "@/components/ui/circular-progress";
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
@@ -53,7 +56,7 @@ const sanitizeFilename = (filename: string): string => {
 
 export default function Home() {
   const router = useRouter();
-  const { file, setFile } = useFile();
+  const { file, setFile, setCurrentBookId } = useFile();
   const { theme } = useTheme();
   const isDark = theme === 'dark';
   
@@ -110,24 +113,26 @@ export default function Home() {
   const handleUpload = async () => {
     if (!file || !user) return;
     
-    // No need for filename validation here anymore since we're always using sanitized names
     setIsUploading(true);
     setUploadProgress(0);
     setIndexingProgress({ current: 0, total: 0 });
     
     try {
-      // Upload file to storage
-      const updatedBooks = await uploadFile(file, user.id);
+      const pdfjs = await import('pdfjs-dist');
+      const pdf = await pdfjs.getDocument(URL.createObjectURL(file)).promise;
+      // Upload file and create book record
+      const updatedBooks = await uploadFile(file, user.id, pdf.numPages);
       if (!updatedBooks) {
         setIsUploading(false);
         return;
       }
       setUploadProgress(30);
       
+      // Get the newly created book's ID (it should be the first one since we order by id desc)
+      const newBook = updatedBooks[0];
+      
       // Generate embeddings for text content
       if (file.type === 'application/pdf') {
-        const pdfjs = await import('pdfjs-dist');
-        const pdf = await pdfjs.getDocument(URL.createObjectURL(file)).promise;
         const paragraphs: string[] = [];
         
         // Extract paragraphs from PDF
@@ -148,27 +153,26 @@ export default function Home() {
         setUploadProgress(50);
         setIndexingProgress({ current: 0, total: paragraphs.length });
 
-        // Process paragraphs in batches with a delay between calls
         const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
         
-        const BATCH_SIZE = 9; // Process 5 paragraphs concurrently
-        const DELAY_MS = 40;  // Delay between batches
+        const BATCH_SIZE = 9;
+        const DELAY_MS = 40;
 
-        // Helper function to process paragraphs in batches
-        const processParagraphsBatch = async (paragraphs: string[], file: File) => {
+        const processParagraphsBatch = async (paragraphs: string[], bookId: number) => {
           for (let i = 0; i < paragraphs.length; i += BATCH_SIZE) {
             const batch = paragraphs.slice(i, i + BATCH_SIZE);
             
-            // Process batch concurrently
             await Promise.all(batch.map(async (paragraph) => {
               try {
                 const { error } = await supabase.functions.invoke('embed', {
-                  body: { text: paragraph, path: file.name }
+                  body: { 
+                    text: paragraph, 
+                    bookId: bookId // Pass book ID instead of path
+                  }
                 });
                 
                 if (error) throw error;
                 
-                // Update progress
                 setIndexingProgress(prev => ({ ...prev, current: prev.current + 1 }));
                 setUploadProgress(50 + Math.floor(((i + batch.length) / paragraphs.length) * 50));
               } catch (error) {
@@ -176,13 +180,11 @@ export default function Home() {
               }
             }));
             
-            // Add delay between batches to prevent rate limiting
             await delay(DELAY_MS);
           }
         };
 
-        // Replace the existing for loop with this call
-        await processParagraphsBatch(paragraphs, file);
+        await processParagraphsBatch(paragraphs, newBook.id);
       }
 
       if (updatedBooks) {
@@ -202,7 +204,7 @@ export default function Home() {
   };
 
   const [isLoading, setIsLoading] = useState(true);
-  const [books, setBooks] = useState<FileObject[]>([]);
+  const [books, setBooks] = useState<Book[]>([]);
   useEffect(() => {
     if (!user) return
     getBooks(user.id)
@@ -214,15 +216,15 @@ export default function Home() {
 
   const [deletingBook, setDeletingBook] = useState<string | null>(null);
 
-  const handleDeleteBook = async (e: React.MouseEvent, name: string) => {
-    e.stopPropagation(); // Prevent opening the book when clicking delete
+  const handleDeleteBook = async (e: React.MouseEvent, book: Book) => {
+    e.stopPropagation();
     if (!user) return;
     
     try {
-      setDeletingBook(name);
-      const success = await deleteBook(user.id, name);
+      setDeletingBook(book.name);
+      const success = await deleteBook(book.id, user.id, book.name);
       if (success) {
-        setBooks(books.filter(book => book.name !== name));
+        setBooks(books.filter(b => b.id !== book.id));
       }
     } catch (error) {
       toast.error("Error deleting book");
@@ -232,35 +234,53 @@ export default function Home() {
     }
   };
 
-  async function openBook(name: string) {
+  async function openBook(book: Book) {
     if (!user) return;
     
     try {
-      setLoadingBook(name); // Start loading state for this specific book
+      setLoadingBook(book.name);
       
-      const blob = await getBookUrl(user.id, name);
+      const blob = await getBookUrl(book.id, user.id, book.name);
       if (!blob) {
         toast.error("Could not download book");
         return;
       }
 
-      // Create a File object directly from the blob
-      const file = new File([blob], name, { type: blob.type });
+      const file = new File([blob], book.name, { type: blob.type });
       setFile(file);
+      setCurrentBookId(book.id);
 
-      // Route based on file type
-      if (name.toLowerCase().endsWith('.pdf')) {
+      if (book.name.toLowerCase().endsWith('.pdf')) {
         router.push('/reader/pdf');
-      } else if (name.toLowerCase().endsWith('.epub')) {
+      } else if (book.name.toLowerCase().endsWith('.epub')) {
         router.push('/reader/epub');
       }
     } catch (error) {
       toast.error("Error opening book");
       console.error(error);
     } finally {
-      setLoadingBook(null); // Clear loading state
+      setLoadingBook(null);
     }
   }
+
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false);
+  const [bookToRename, setBookToRename] = useState<Book | null>(null);
+
+  const handleRenameClick = (e: React.MouseEvent, book: Book) => {
+    e.stopPropagation(); // Prevent opening the book
+    setBookToRename(book);
+    setRenameDialogOpen(true);
+  };
+
+  const handleRename = async (newName: string) => {
+    if (!user || !bookToRename) return;
+    
+    const updatedBooks = await renameBook(bookToRename, newName, user.id);
+    if (updatedBooks) {
+      setBooks(updatedBooks);
+      toast.success('Book renamed successfully');
+    }
+  };
 
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
@@ -330,29 +350,45 @@ export default function Home() {
                 <Skeleton className="w-full h-full rounded-lg" />
               </div>
             ))
-          ) : books?.map((book: FileObject) => (
+          ) : books?.map((book: Book) => (
             <div
-              key={book.name}
+              key={book.id}
               className="h-[200px] border rounded-lg p-4 hover:border-blue-500 transition-colors cursor-pointer flex flex-col items-center justify-center gap-2 relative group"
               onClick={() => {
                 setFile(new File([], book.name));
-                openBook(book.name);
+                openBook(book);
               }}
             >
-              {/* Delete button */}
-              <button
-                onClick={(e) => handleDeleteBook(e, book.name)}
-                className="absolute top-2 right-2 p-1.5 rounded-full bg-gray-100 dark:bg-gray-800 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 dark:hover:bg-red-900"
-                aria-label="Delete book"
-              >
-                {deletingBook === book.name ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-red-500" />
-                ) : (
-                  <X className="h-4 w-4 text-red-500" />
-                )}
-              </button>
-
-              {/* Book icon and name */}
+              <div className="absolute top-2 left-2">
+                <CircularProgress 
+                  value={book.pages_read} 
+                  max={book.pages} 
+                  size={28}
+                  className="bg-white dark:bg-gray-950 rounded-full"
+                  gaugePrimaryColor={isDark ? "#3b82f6" : "#2563eb"}
+                  gaugeSecondaryColor={isDark ? "#374151" : "#e5e7eb"}
+                />
+              </div>
+              <div className="absolute top-2 right-2 flex gap-2">
+                <button
+                  onClick={(e) => handleRenameClick(e, book)}
+                  className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-800 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-100 dark:hover:bg-blue-900"
+                  aria-label="Rename book"
+                >
+                  <Pencil className="h-4 w-4 text-blue-500" />
+                </button>
+                <button
+                  onClick={(e) => handleDeleteBook(e, book)}
+                  className="p-1.5 rounded-full bg-gray-100 dark:bg-gray-800 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 dark:hover:bg-red-900"
+                  aria-label="Delete book"
+                >
+                  {deletingBook === book.name ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-red-500" />
+                  ) : (
+                    <X className="h-4 w-4 text-red-500" />
+                  )}
+                </button>
+              </div>
               {loadingBook === book.name ? (
                 <Loader2 className="h-8 w-8 animate-spin text-gray-500 dark:text-gray-400" />
               ) : (
@@ -360,6 +396,9 @@ export default function Home() {
               )}
               <p className="text-sm text-center font-medium">
                 {truncateFileName(book.name, 20)}
+              </p>
+              <p className="text-xs text-gray-500">
+                {book.pages_read} of {book.pages} pages read
               </p>
             </div>
           ))}
@@ -369,6 +408,13 @@ export default function Home() {
           <NavUser />
         </div>
       </main>
+
+      <RenameDialog
+        book={bookToRename}
+        isOpen={renameDialogOpen}
+        onOpenChange={setRenameDialogOpen}
+        onRename={handleRename}
+      />
     </div>
   );
 }
