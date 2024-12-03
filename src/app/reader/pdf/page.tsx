@@ -402,10 +402,7 @@ export default function PDFReader() {
         // Handle compression if enabled
         if (compressionDeps.compressionMode !== '1:1') {
           setIsCompressing(true);
-          const result = await compressWithChromeAI(
-            combinedText,
-            compressionDeps.compressionMode
-          );
+          const result = await compressWithChromeAI(combinedText);
 
           if (result?.stream) {
             let fullContent = '';

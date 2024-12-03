@@ -295,13 +295,13 @@ export async function translateText(text: string, targetLanguage: string) {
 }
 
 // Update compression function to use rewriter API
-export async function compressWithChromeAI(text: string, compressionMode: string) {
+export async function compressWithChromeAI(text: string) {
   try {
     dispatchGenerationStart();
     const session = await getOrCreateCompressionSession();
     const controller = new AbortController();
 
-    const prompt = `Compress the following text to ${compressionMode === '1:2' ? 'half' : 'one-third'} of its original length while preserving key information:
+    const prompt = `Compress the following text to half of its original length as described in system prompt:
 
 ${text}`;
 
