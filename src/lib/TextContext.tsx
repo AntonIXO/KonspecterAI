@@ -60,7 +60,7 @@ export function TextProvider({ children }: { children: ReactNode }) {
     const pages = [];
     for (let i = startPage; i <= endPage; i++) {
       if (pagesContent[i]) {
-        pages.push(pagesContent[i]);
+        pages.push(pagesContent[i].text);
       }
     }
     return pages.join('\n\n');

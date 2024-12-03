@@ -58,7 +58,7 @@ export function Summary({ open, setOpen, handleSave, selectedText }: SummaryProp
             };
             startChat();
         }
-    }, [open, selectedText, pagesContent, append, messages]);
+    }, [open, selectedText, getPageRange, append, messages]);
 
     const handleClose = useCallback(() => {
         stop(); // Cancel any ongoing requests

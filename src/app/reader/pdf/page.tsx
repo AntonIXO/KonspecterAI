@@ -95,7 +95,7 @@ export default function PDFReader() {
   const [inputValue, setInputValue] = useState<string>(String(currentPage));
   const { state, compressionMode, language } = useSidebar();
   const [windowWidth, setWindowWidth] = useState<number>(maxWidth);
-  const { pagesContent, setPageContent, clearContent } = useText();
+  const { pagesContent, setPageContent, clearContent, getPageRange } = useText();
   const [pdfDocument, setPdfDocument] = useState<any>(null);
   const [scale, setScale] = useState<number>(1.0);
   const [pageDimensions, setPageDimensions] = useState<PageDimensions>({ width: 0, height: 0 });
@@ -285,17 +285,25 @@ export default function PDFReader() {
   // Helper function to handle sentence boundaries
   const processSentenceBoundaries = useCallback((text: string) => {
     // Find the last sentence ending punctuation
-    const lastSentenceEnd = text.search(/[.!?][^.!?]*$/);
-    
-    if (lastSentenceEnd === -1) {
+    const regex = /[.!?](?=\s|$)/g;
+    let match: RegExpExecArray | null;
+    let lastMatch: RegExpExecArray | null = null;
+
+    while ((match = regex.exec(text)) !== null) {
+      lastMatch = match;
+    }
+
+    if (!lastMatch) {
       // No sentence ending found, entire text might be incomplete
       return { completeText: '', incompleteText: text };
     }
-    
-    // Split at the last sentence ending (+1 to include the punctuation)
-    const completeText = text.slice(0, lastSentenceEnd + 1);
-    const incompleteText = text.slice(lastSentenceEnd + 1).trim();
-    
+
+    const lastIndex = lastMatch.index + 1; // +1 to include the punctuation
+
+    // Split at the last sentence ending
+    const completeText = text.slice(0, lastIndex).trim();
+    const incompleteText = text.slice(lastIndex).trim();
+
     return { completeText, incompleteText };
   }, []);
 
@@ -318,12 +326,14 @@ export default function PDFReader() {
       const prevPageIncomplete = pagesContent[pageNum - 1]?.incompleteText || '';
       
       // Combine with current page text
-      const fullText = `${prevPageIncomplete} ${rawPageText}`.trim();
+      const combinedText = prevPageIncomplete
+        ? `${prevPageIncomplete} ${rawPageText}`.trim()
+        : rawPageText;
       
       // Process sentence boundaries
-      const { completeText, incompleteText } = processSentenceBoundaries(fullText);
+      const { completeText, incompleteText } = processSentenceBoundaries(combinedText);
       
-      // Store both complete and incomplete parts
+      // Store only the complete part for the current page
       setPageContent(pageNum, {
         text: completeText,
         incompleteText: incompleteText
@@ -339,19 +349,13 @@ export default function PDFReader() {
 
     // Extract content for current page and adjacent pages
     const pagesToExtract = [
-      currentPage - 2,
-      currentPage - 1,
+      currentPage - 1, // Only need the previous page for incompleteText
       currentPage,
-      currentPage + 1,
-      currentPage + 2
+      currentPage + 1, // Next page will receive incompleteText
     ].filter(page => page > 0 && page <= (numPages || 0));
 
     Promise.all(pagesToExtract.map(pageNum => extractPageContent(pageNum)));
   }, [currentPage, numPages, pdfDocument, extractPageContent]);
-
-  const handlePageChange = useCallback((newPage: number) => {
-    setCurrentPage(newPage);
-  }, []);
 
   // Memoize the compression effect dependencies
   const compressionDeps = useMemo(() => ({
@@ -376,16 +380,7 @@ export default function PDFReader() {
       const pagesToInclude = compressionMode === '1:3' ? 3 : 
                             compressionMode === '1:2' ? 2 : 1;
       
-      let combinedText = '';
-      for (let i = 0; i < pagesToInclude; i++) {
-        const pageNum = compressionDeps.currentPage + i;
-        if (pageNum <= (compressionDeps.numPages || 1)) {
-          const pageContent = compressionDeps.pagesContent[pageNum];
-          if (pageContent) {
-            combinedText += (i > 0 ? '\n\n' : '') + pageContent.text;
-          }
-        }
-      }
+      const combinedText = getPageRange(currentPage, currentPage + pagesToInclude - 1);
 
       if (!combinedText) {
         setCompressedContent('');
@@ -591,7 +586,7 @@ export default function PDFReader() {
         </div>
 
         <Button
-          onClick={() => handlePageChange(currentPage + 1)}
+          onClick={goToNextPage}
           disabled={currentPage >= (numPages || 1)}
           variant="outline"
           className="w-full sm:w-auto shadow-sm"

@@ -43,7 +43,7 @@ interface QuizProps {
 }
 
 export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizProps) {
-  const { pagesContent } = useText();
+  const { getPageRange } = useText();
   const [questions, setQuestions] = useState<Question[]>(initialQuiz?.questions || [])
   const [userAnswers, setUserAnswers] = useState<number[]>([])
   const [showResults, setShowResults] = useState(false)
@@ -60,10 +60,10 @@ export function Quiz({ open, setOpen, initialQuiz, standalone = false }: QuizPro
       setQuestions(initialQuiz.questions);
       setUserAnswers(new Array(initialQuiz.questions.length).fill(-1));
     } else if (open && !questions.length && !loading) {
-      const textToQuiz = Object.values(pagesContent).join('\n\n');
+      const textToQuiz = getPageRange(1, 8);
       handleGenerateQuiz(textToQuiz);
     }
-  }, [open, pagesContent, initialQuiz, questions.length, loading]);
+  }, [open, initialQuiz, questions.length, loading]);
 
   // Remove the cleanup effect that was clearing questions
   React.useEffect(() => {
