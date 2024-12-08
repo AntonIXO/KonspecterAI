@@ -79,7 +79,7 @@ export function Auth() {
                 Enter your email below to login to your account
               </CardDescription>
             </CardHeader>
-            <form action={handleLogin}>
+            <form onSubmit={(e) => { e.preventDefault(); handleLogin(new FormData(e.currentTarget)); }}>
               <CardContent className="space-y-4">
                 <GoogleButton onClick={handleGoogleLogin} />
                 <div className="relative">
@@ -149,7 +149,7 @@ export function Auth() {
                 Enter your email below to create your account
               </CardDescription>
             </CardHeader>
-            <form action={handleSignup}>
+            <form onSubmit={(e) => { e.preventDefault(); handleSignup(new FormData(e.currentTarget)); }}>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>

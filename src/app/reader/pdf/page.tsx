@@ -100,6 +100,7 @@ export default function PDFReader() {
   const { pagesContent, setPageContent, clearContent, getPageRange } = useText();
   const [pdfDocument, setPdfDocument] = useState<any>(null);
   const [scale, setScale] = useState<number>(1.0);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [pageDimensions, setPageDimensions] = useState<PageDimensions>({ width: 0, height: 0 });
   const [compressedContent, setCompressedContent] = useState<string>('');
   const [isCompressing, setIsCompressing] = useState(false);
