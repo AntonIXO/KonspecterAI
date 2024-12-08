@@ -539,12 +539,12 @@ export default function PDFReader() {
 
           <Card 
             className="w-full overflow-hidden bg-white dark:bg-gray-950"
-            style={{
-              height: compressionMode === '1:1' && pageDimensions.height > 0 
-                ? `${pageDimensions.height * scale}px` 
-                : 'auto',
-              transition: 'height 0.2s ease-in-out'
-            }}
+            // style={{
+            //   height: compressionMode === '1:1' && pageDimensions.height > 0 
+            //     ? `${pageDimensions.height * scale}px` 
+            //     : 'auto',
+            //   transition: 'height 0.2s ease-in-out'
+            // }}
           >
             <CardContent className="p-2 sm:p-4 md:p-6">
               <div className="w-full flex flex-col items-center" {...swipeHandlers}>
