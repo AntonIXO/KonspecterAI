@@ -1,7 +1,7 @@
 'use server';
 
 import { convertToCoreMessages, Message, tool, streamText } from "ai";
-import { geminiProModel } from "@/lib/ai";
+import { geminiFlashTwoModel } from "@/lib/ai";
 import { z } from "zod";
 import { createClient } from "@/utils/supabase/server";
 import { prompt } from '../../../lib/ai/propmts';
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   );
 
   const result = streamText({
-    model: geminiProModel,
+    model: geminiFlashTwoModel,
     system: prompt,
     messages: coreMessages,
     experimental_continueSteps: true,

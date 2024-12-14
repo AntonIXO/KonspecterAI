@@ -12,3 +12,8 @@ export const geminiFlashModel = wrapLanguageModel({
   model: google("gemini-1.5-flash-002"),
   middleware: customMiddleware,
 });
+
+export const geminiFlashTwoModel = wrapLanguageModel({
+  model: google("gemini-2.0-flash-exp"),
+  middleware: customMiddleware,
+});

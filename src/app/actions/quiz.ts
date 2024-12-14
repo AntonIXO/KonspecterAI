@@ -1,7 +1,7 @@
 'use server';
 
 import { generateObject } from 'ai';
-import { geminiProModel } from "@/lib/ai";
+import { geminiFlashTwoModel } from "@/lib/ai";
 import { z } from 'zod';
 import { createClient } from "@/utils/supabase/server";
 
@@ -26,7 +26,7 @@ export async function generateQuiz(text: string) {
   }
 
   const { object: quiz } = await generateObject({
-    model: geminiProModel,
+    model: geminiFlashTwoModel,
     system: 'You are an AI quiz generator. Generate 5 multiple choice questions based on the provided text.',
     prompt: text,
     schema: quizSchema,
